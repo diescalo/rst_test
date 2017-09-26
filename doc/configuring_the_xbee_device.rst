@@ -11,6 +11,8 @@ commands on them.
   information, see Write configuration changes.
 
 
+.. _configCommonParameters:
+
 Read and set common parameters
 ------------------------------
 
@@ -176,6 +178,8 @@ the following reasons:
 | **examples/configuration/ManageCommonParametersSample**                                                                                                |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+.. _configOtherParameters:
 
 Read, set and execute other parameters
 --------------------------------------
@@ -439,6 +443,8 @@ The ``write_changes()`` method may fail for the following reasons:
       ``XBeeException``.
 
 
+.. _configReset:
+
 Reset the device
 ----------------
 
@@ -487,6 +493,8 @@ The ``reset()`` method may fail for the following reasons:
 | **examples/configuration/ResetModuleSample**                                                                                                                   |
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+.. _configWiFi:
 
 Configure Wi-Fi settings
 ------------------------

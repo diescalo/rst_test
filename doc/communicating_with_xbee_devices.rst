@@ -11,6 +11,8 @@ transmission and reception of data.
   methods for transmitting or receiving data.
 
 
+.. _communicateSendData:
+
 Send data
 ---------
 
@@ -248,6 +250,8 @@ The ``send_data_broadcast`` method may fail for the following reasons:
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
+.. _communicateSendExplicitData:
+
 Send explicit data
 ------------------
 
@@ -421,6 +425,8 @@ The previous methods may fail for the following reasons:
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
+.. _communicateSendBroadcastExplicitData:
+
 Send explicit data to all devices in the network
 ````````````````````````````````````````````````
 
@@ -470,6 +476,8 @@ The ``send_expl_data_broadcast`` method may fail for the following reasons:
 | **examples/communication/explicit/SendBroadcastExplicitDataSample**                                                                                                                   |
 +---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+.. _communicateSendIPData:
 
 Send IP data
 ------------
@@ -616,6 +624,8 @@ The ``send_ip_data_async`` method may fail for the following reasons:
       ``XBeeException``.
 
 
+.. _communicateSendSMS:
+
 Send SMS messages
 -----------------
 
@@ -750,6 +760,8 @@ There are two different ways to read data from the device:
   information.
 
 
+.. _comunicateReceiveDataPolling:
+
 Polling for data
 ````````````````
 
@@ -846,6 +858,8 @@ can configure the timeout using the ``get_sync_ops_timeout`` and
 | **examples/communication/ReceiveDataPollingSample**                                                                                                                 |
 +---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+.. _comunicateReceiveDataCallback:
 
 Data reception callback
 ```````````````````````
@@ -945,8 +959,10 @@ read it using one of the following mechanisms provided by the XBee device
 object.
 
 
-Polling for data
-````````````````
+.. _comunicateReceiveExplicitDataPolling:
+
+Polling for explicit data
+`````````````````````````
 
 The simplest way to read for explicit data is by executing the
 ``read_expl_data`` method of the local XBee device. This method blocks your
@@ -1052,6 +1068,8 @@ can configure the timeout using the ``get_sync_ops_timeout`` and
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
+.. _comunicateReceiveExplicitDataCallback:
+
 Explicit data reception callback
 ````````````````````````````````
 
@@ -1145,6 +1163,8 @@ callback.
   have registered them. If you read the received data with the polling
   mechanism, you also receive the message through both methods.
 
+
+.. _comunicateReceiveIPData:
 
 Receive IP data
 ---------------
@@ -1407,6 +1427,8 @@ listener.
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
+.. _comunicateReceiveSMS:
+
 Receive SMS messages
 --------------------
 
@@ -1479,6 +1501,8 @@ unsubscribe the already-registered listener.
 | **examples/communication/cellular/ReceiveSMSSample**                                                                                                                                                       |
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+.. _comunicateReceiveModemStatus:
 
 Receive modem status events
 ---------------------------

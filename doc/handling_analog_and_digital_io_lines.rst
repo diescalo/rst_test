@@ -115,6 +115,8 @@ The ``get_io_configuration()`` method may fail for the following reasons:
       ``XBeeException``.
 
 
+.. _linesDIO:
+
 Digital Input/Output
 ````````````````````
 
@@ -199,6 +201,8 @@ The ``get_dio_value()`` method may fail for the following reasons:
 | **examples/io/RemoteDIOSample/RemoteDIOSample.py**                                                                                                                                       |
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+
+.. _linesADC:
 
 ADC
 ```
@@ -320,6 +324,8 @@ with the current duty cycle percentage of the PWM.
   In both cases (get and set), the IO line provided must be PWM capable and must
   be configured as PWM output.
 
+
+.. _linesReadIOSamples:
 
 Read IO samples
 ---------------

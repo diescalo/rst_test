@@ -84,6 +84,8 @@ in the module.
   [...]
 
 
+.. _discoverNetwork:
+
 Discover the network
 --------------------
 
@@ -196,7 +198,7 @@ all times that a discovery process finishes.
 
   # Define the discovery process finished callback.
   def callback(err_code):
-      if err_code == XBeeNetwor.ERR_READ_TIMEOUT:
+      if err_code == XBeeNetwork.ERR_READ_TIMEOUT:
           [...]
 
   # Add the discovery process finished callback.
@@ -217,7 +219,7 @@ The behavior of the event is as follows:
 +==================================================================================================================================================================+
 | The XBee Python Library includes a sample application that displays how to perform a device discovery using a listener. It can be located in the following path: |
 |                                                                                                                                                                  |
-| **examples\network\DiscoverDevicesSample\DiscoverDevicesSample.py**                                                                                              |
+| **examples/network/DiscoverDevicesSample/DiscoverDevicesSample.py**                                                                                              |
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -312,7 +314,7 @@ you to retrieve already discovered devices:
   if spec_device is not None:
       print("Device with 16-bit addr: %s and node id: %s found" % (str(x64addr), str(node_id)))
 
-[...]
+  [...]
 
 
 Add and remove devices manually
