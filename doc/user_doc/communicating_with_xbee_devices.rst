@@ -200,6 +200,8 @@ The previous methods may fail for the following reasons:
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
+.. _communicateSendBroadcastData:
+
 Send data to all devices of the network
 ```````````````````````````````````````
 

@@ -34,41 +34,133 @@ development stages of your Python applications using the XBee Python Library.
 Requirements
 ============
 
-* Python 3
-* PySerial 3
+The XBee Python library requires the following components in order to work
+properly:
+
+* **Python 3**. You can get it from https://www.python.org/getit/
+* **PySerial 3**. Install it with pip (``pip install pyserial``) or refer to
+  the `PySerial installlation guide
+  <http://pythonhosted.org/pyserial/pyserial.html#installation>`_ for further
+  information about getting PySerial.
 
 
 Contents
 ========
 
-User Documentation
+The XBee Python library documentation is split in different secions:
+
+* :ref:`indexGSG`
+* :ref:`indexUserDoc`
+* :ref:`indexExamples`
+* :ref:`indexFAQ`
+* :ref:`indexAPI`
+
+
+.. _indexGSG:
+
+Getting Started
+---------------
+
+Perform your first steps with the XBee Python library. Learn how to setup your
+environment and communicate with your XBee devices using the library.
 
 * :doc:`getting_started_with_xbee_python_library`
-* :doc:`xbee_terminology`
-* :doc:`working_with_xbee_classes`
-* :doc:`configuring_the_xbee_device`
-* :doc:`discovering_the_xbee_network`
-* :doc:`communicating_with_xbee_devices`
-* :doc:`handling_analog_and_digital_io_lines`
-* :doc:`logging_events`
+
+
+.. _indexUserDoc:
+
+User Documentation
+------------------
+
+Access detailed information about the different features and capabilities
+provided by the library and how to use them.
+
+* :doc:`user_doc/xbee_terminology`
+* :doc:`user_doc/working_with_xbee_classes`
+* :doc:`user_doc/configuring_the_xbee_device`
+* :doc:`user_doc/discovering_the_xbee_network`
+* :doc:`user_doc/communicating_with_xbee_devices`
+* :doc:`user_doc/handling_analog_and_digital_io_lines`
+* :doc:`user_doc/logging_events`
+
+
+.. _indexExamples:
+
+Examples
+--------
+
+The library includes a good amount of examples that demonstrates most of the
+functionality that it provicdes.
+
 * :doc:`examples`
+
+
+.. _indexFAQ:
+
+FAQ
+---
+
+Find the answer to the most common questions or problems related to the XBee
+Python library in the FAQ section.
+
 * :doc:`faq`
+
+
+.. _indexAPI:
+
+API reference
+-------------
+
+The API reference contains more detauled documentation about the API for
+developers who are interested in using and extending the library functionality.
+
+* :doc:`api/modules`
+
+
+.. toctree::
+   :maxdepth: 4
+   :hidden:
+   :caption: Getting Started
+
+   getting_started_with_xbee_python_library
+
 
 .. toctree::
    :maxdepth: 4
    :hidden:
    :caption: User Documentation
 
-   getting_started_with_xbee_python_library
-   xbee_terminology
-   working_with_xbee_classes
-   configuring_the_xbee_device
-   discovering_the_xbee_network
-   communicating_with_xbee_devices
-   handling_analog_and_digital_io_lines
-   logging_events
+   user_doc/xbee_terminology
+   user_doc/working_with_xbee_classes
+   user_doc/configuring_the_xbee_device
+   user_doc/discovering_the_xbee_network
+   user_doc/communicating_with_xbee_devices
+   user_doc/handling_analog_and_digital_io_lines
+   user_doc/logging_events
+
+
+.. toctree::
+   :maxdepth: 4
+   :hidden:
+   :caption: Examples
+
    examples
+
+
+.. toctree::
+   :maxdepth: 4
+   :hidden:
+   :caption: FAQs
+
    faq
+
+.. toctree::
+   :maxdepth: 4
+   :hidden:
+   :caption: API reference
+
+   getting_started_with_xbee_python_library
+   api/modules
 
 
 Indices and tables

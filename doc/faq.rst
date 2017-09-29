@@ -25,9 +25,8 @@ been found and their details. The serial port and the baud rate are shown in
 the **Port** label.
 
 .. image:: images/faq_port_bd.png
-   :align: left
+   :align: center
    :alt: Get port and baudrate
-
 
 .. note::
    Note In UNIX systems, the complete name of the serial port contains the

@@ -29,7 +29,7 @@ The XBee RF modules are available in two form-factors: Through-Hole and Surface
 Mount, with different antenna options. Almost all modules are available in the
 Through-Hole form factor and share the same footprint.
 
-.. image:: images/concepts_form_factor.jpg
+.. image:: ../images/concepts_form_factor.jpg
    :align: center
    :width: 250px
    :alt: XBee form factor
@@ -67,7 +67,7 @@ Following is the complete list of protocols supported by the XBee radio modules:
 * Cellular NB-IoT
 * Thread
 
-.. image:: images/concepts_protocol.png
+.. image:: ../images/concepts_protocol.png
    :align: center
    :alt: RF protocols
 
@@ -98,10 +98,10 @@ three different operating modes:
 In some cases, the operating mode of a radio module is established by the
 firmware version and the firmware's AP setting. The module's firmware version
 determines whether the operating mode is AT or API. The firmware's AP setting
-determines if the API mode is escaped (**AP**=2) or not (**AP**=1). In other
-cases, the operating mode is only determined by the AP setting, which allows
-you to configure the mode to be AT (**AP**=0), API (**AP**=1) or API escaped
-(**AP**=2).
+determines if the API mode is escaped (**AP** = 2) or not (**AP** = 1). In
+other cases, the operating mode is only determined by the AP setting, which
+allows you to configure the mode to be AT (**AP** = 0), API (**AP** = 1) or
+API escaped (**AP** = 2).
 
 
 .. _atOperatingMode:
@@ -204,7 +204,7 @@ other modules in the network.
 
 An API frame has the following structure:
 
-.. image:: images/concepts_api_frame.jpg
+.. image:: ../images/concepts_api_frame.jpg
    :align: center
    :width: 250px
    :alt: API frames
@@ -222,7 +222,7 @@ An API frame has the following structure:
 In API escaped mode, there may be some bytes in the Length, Frame Data and
 Checksum fields that must be escaped.
 
-.. image:: images/concepts_api_frame_explained.jpg
+.. image:: ../images/concepts_api_frame_explained.jpg
    :align: center
    :width: 250px
    :alt: API frames escaped

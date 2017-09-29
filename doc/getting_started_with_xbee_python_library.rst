@@ -247,7 +247,7 @@ DigiMesh devices
 .. _gsgConfigDPdevices:
 
 DigiPoint devices
-````````````````
+`````````````````
 
 #. Click **Load default firmware settings** in the **Radio Configuration**
    toolbar to load the default values for the device firmware.
