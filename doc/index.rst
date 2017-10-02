@@ -159,7 +159,6 @@ developers who are interested in using and extending the library functionality.
    :hidden:
    :caption: API reference
 
-   getting_started_with_xbee_python_library
    api/modules
 
 
