@@ -36,6 +36,7 @@ sys.path.insert(0, os.path.abspath('..'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
+    'sphinxcontrib.napoleon',
 ]
 
 # This value contains a list of modules to be mocked up. This is useful
