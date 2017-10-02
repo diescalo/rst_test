@@ -1,24 +1,12 @@
-# Copyright 2017 Digi International Inc., All Rights Reserved
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# This software contains proprietary and confidential information of Digi
-# International Inc.  By accepting transfer of this copy, Recipient agrees
-# to retain this software in confidence, to prevent disclosure to others,
-# and to make no use of this software other than that for which it was
-# delivered.  This is an unpublished copyrighted work of Digi International
-# Inc.  Except as permitted by federal law, 17 USC 117, copying is strictly
-# prohibited.
-#
-# Restricted Rights Legend
-#
-# Use, duplication, or disclosure by the Government is subject to
-# restrictions set forth in sub-paragraph (c)(1)(ii) of The Rights in
-# Technical Data and Computer Software clause at DFARS 252.227-7031 or
-# subparagraphs (c)(1) and (2) of the Commercial Computer Software -
-# Restricted Rights at 48 CFR 52.227-19, as applicable.
-#
-# Digi International Inc., 11001 Bren Road East, Minnetonka, MN 55343
+# Copyright (c) 2017 Digi International Inc. All Rights Reserved.
 
 from enum import Enum, unique
+
+from src.models.xprot import XBeeProtocol
 from src.util import utils
 
 
@@ -39,28 +27,28 @@ class ReceiveOptions(Enum):
     PACKET_ACKNOWLEDGED = 0x01
     """
     Packet was acknowledged.
-    
+
     Not valid for WiFi protocol.
     """
 
     BROADCAST_PACKET = 0x02
     """
     Packet was a broadcast packet.
-    
+
     Not valid for WiFi protocol.
     """
 
     APS_ENCRYPTED = 0x20
     """
     Packet encrypted with APS encryption.
-    
+
     Only valid for ZigBee XBee protocol.
     """
 
     SENT_FROM_END_DEVICE = 0x40
     """
     Packet was sent from an end device (if known).
-    
+
     Only valid for ZigBee XBee protocol.
     """
 
@@ -69,14 +57,14 @@ ReceiveOptions.__doc__ += utils.doc_enum(ReceiveOptions)
 
 class TransmitOptions(Enum):
     """
-    This class lists all the possible options that can be set while 
+    This class lists all the possible options that can be set while
     transmitting an XBee packet.
 
-    The transmit options are usually set as a bitfield meaning that the options 
+    The transmit options are usually set as a bitfield meaning that the options
     can be combined using the '|' operand.
-    
-    Not all options are available for all cases, that's why there are different 
-    names with same values. In each moment, you must be sure that the option 
+
+    Not all options are available for all cases, that's why there are different
+    names with same values. In each moment, you must be sure that the option
     your are going to use, is a valid option in your context.
     """
 
@@ -89,7 +77,7 @@ class TransmitOptions(Enum):
     """
     Disables acknowledgments on all unicasts .
 
-    Only valid for DigiMesh, 802.15.4 and Point-to-multipoint 
+    Only valid for DigiMesh, 802.15.4 and Point-to-multipoint
     protocols.
     """
 
@@ -111,7 +99,7 @@ class TransmitOptions(Enum):
 
     USE_BROADCAST_PAN_ID = 0x04
     """
-    Sends packet with broadcast {@code PAN ID}. Packet will be sent to all 
+    Sends packet with broadcast {@code PAN ID}. Packet will be sent to all
     devices in the same channel ignoring the {@code PAN ID}.
 
     It cannot be combined with other options.
@@ -148,7 +136,7 @@ class TransmitOptions(Enum):
     """
     Enables APS encryption, only if {@code EE=1} .
 
-    Enabling APS encryption decreases the maximum number of RF payload 
+    Enabling APS encryption decreases the maximum number of RF payload
     bytes by 4 (below the value reported by {@code NP}).
 
     Only valid for ZigBee XBee protocol.
@@ -158,7 +146,7 @@ class TransmitOptions(Enum):
     """
     Uses the extended transmission timeout .
 
-    Setting the extended timeout bit causes the stack to set the 
+    Setting the extended timeout bit causes the stack to set the
     extended transmission timeout for the destination address.
 
     Only valid for ZigBee XBee protocol.
@@ -166,9 +154,9 @@ class TransmitOptions(Enum):
 
     POINT_MULTIPOINT_MODE = 0x40
     """
-    Transmission is performed using point-to-Multipoint mode. 
+    Transmission is performed using point-to-Multipoint mode.
 
-    Only valid for DigiMesh 868/900 and Point-to-Multipoint 868/900 
+    Only valid for DigiMesh 868/900 and Point-to-Multipoint 868/900
     protocols.
     """
 
@@ -176,7 +164,7 @@ class TransmitOptions(Enum):
     """
     Transmission is performed using repeater mode .
 
-    Only valid for DigiMesh 868/900 and Point-to-Multipoint 868/900 
+    Only valid for DigiMesh 868/900 and Point-to-Multipoint 868/900
     protocols.
     """
 
@@ -184,7 +172,7 @@ class TransmitOptions(Enum):
     """
     Transmission is performed using DigiMesh mode .
 
-    Only valid for DigiMesh 868/900 and Point-to-Multipoint 868/900 
+    Only valid for DigiMesh 868/900 and Point-to-Multipoint 868/900
     protocols.
     """
 
@@ -196,7 +184,7 @@ class RemoteATCmdOptions(Enum):
     This class lists all the possible options that can be set while transmitting
     a remote AT Command.
 
-    These options are usually set as a bitfield meaning that the options 
+    These options are usually set as a bitfield meaning that the options
     can be combined using the '|' operand.
     """
 
@@ -214,7 +202,7 @@ class RemoteATCmdOptions(Enum):
     """
     Applies changes in the remote device.
 
-    If this option is not set, AC command must be sent before changes 
+    If this option is not set, AC command must be sent before changes
     will take effect.
     """
 
@@ -222,7 +210,7 @@ class RemoteATCmdOptions(Enum):
     """
     Uses the extended transmission timeout
 
-    Setting the extended timeout bit causes the stack to set the extended 
+    Setting the extended timeout bit causes the stack to set the extended
     transmission timeout for the destination address.
 
     Only valid for ZigBee XBee protocol.
@@ -288,3 +276,117 @@ class SendDataRequestOptions(Enum):
 
 SendDataRequestOptions.lookupTable = {x.code: x for x in SendDataRequestOptions}
 SendDataRequestOptions.__doc__ += utils.doc_enum(SendDataRequestOptions)
+
+
+@unique
+class DiscoveryOptions(Enum):
+    """
+    Enumerates the different options used in the discovery process.
+    """
+
+    APPEND_DD = (0x01, "Append device type identifier (DD)")
+    """
+    Append device type identifier (DD) to the discovery response.
+
+    Valid for the following protocols:
+      * DigiMesh
+      * Point-to-multipoint (Digi Point)
+      * ZigBee
+    """
+
+    DISCOVER_MYSELF = (0x02, "Local device sends response frame")
+    """
+    Local device sends response frame when discovery is issued.
+
+    Valid for the following protocols:
+      * DigiMesh
+      * Point-to-multipoint (Digi Point)
+      * ZigBee
+      * 802.15.4
+    """
+
+    APPEND_RSSI = (0x04, "Append RSSI (of the last hop)")
+    """
+    Append RSSI of the last hop to the discovery response.
+
+    Valid for the following protocols:
+      * DigiMesh
+      * Point-to-multipoint (Digi Point)
+    """
+
+    def __init__(self, code, description):
+        self.__code = code
+        self.__description = description
+
+    def __get_code(self):
+        """
+        Returns the code of the ``DiscoveryOptions`` element.
+
+        Returns:
+            Integer: the code of the ``DiscoveryOptions`` element.
+        """
+        return self.__code
+
+    def __get_description(self):
+        """
+        Returns the description of the ``DiscoveryOptions`` element.
+
+        Returns:
+            String: the description of the ``DiscoveryOptions`` element.
+        """
+        return self.__description
+
+    @classmethod
+    def get(cls, code):
+        """
+        Returns the ``DiscoveryOptions`` for the given code.
+
+        Args:
+            code (Integer): the code of the ``DiscoveryOptions`` to get.
+
+        | Returns:
+        |     :class:`.FrameError`: the ``DiscoveryOptions`` with the given code, ``None`` if there is not
+                                    any discovery option with the provided code.
+        """
+        try:
+            return cls.lookupTable[code]
+        except KeyError:
+            return None
+
+    @staticmethod
+    def calculate_discovery_value(protocol, options):
+        """
+        Calculates the total value of a combination of several options for the
+        given protocol.
+
+        | Args:
+        |     protocol (:class:`.XBeeProtocol`): the ``XBeeProtocol`` to calculate the value of all the given
+                                                 discovery options.
+        |     options: collection of options to get the final value.
+
+        | Returns:
+        |     Integer: The value to be configured in the module depending on the given
+                       collection of options and the protocol.
+        """
+        value = 0
+        if protocol in [XBeeProtocol.ZIGBEE, XBeeProtocol.ZNET]:
+            for op in options:
+                if op == DiscoveryOptions.APPEND_RSSI:
+                    continue
+                value = value + op.code
+        elif protocol in [XBeeProtocol.DIGI_MESH, XBeeProtocol.DIGI_POINT, XBeeProtocol.XLR, XBeeProtocol.XLR_DM]:
+            for op in options:
+                value = value + op.code
+        else:
+            if DiscoveryOptions.DISCOVER_MYSELF in options:
+                value = 1  # This is different for 802.15.4.
+        return value
+
+    code = property(__get_code)
+    """Integer. The discovery option code."""
+
+    description = property(__get_description)
+    """String. The discovery option description."""
+
+DiscoveryOptions.lookupTable = {x.code: x for x in DiscoveryOptions}
+DiscoveryOptions.__doc__ += utils.doc_enum(DiscoveryOptions)

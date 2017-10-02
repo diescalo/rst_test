@@ -1,22 +1,8 @@
-# Copyright 2017 Digi International Inc., All Rights Reserved
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# This software contains proprietary and confidential information of Digi
-# International Inc.  By accepting transfer of this copy, Recipient agrees
-# to retain this software in confidence, to prevent disclosure to others,
-# and to make no use of this software other than that for which it was
-# delivered.  This is an unpublished copyrighted work of Digi International
-# Inc.  Except as permitted by federal law, 17 USC 117, copying is strictly
-# prohibited.
-#
-# Restricted Rights Legend
-#
-# Use, duplication, or disclosure by the Government is subject to
-# restrictions set forth in sub-paragraph (c)(1)(ii) of The Rights in
-# Technical Data and Computer Software clause at DFARS 252.227-7031 or
-# subparagraphs (c)(1) and (2) of the Commercial Computer Software -
-# Restricted Rights at 48 CFR 52.227-19, as applicable.
-#
-# Digi International Inc., 11001 Bren Road East, Minnetonka, MN 55343
+# Copyright (c) 2017 Digi International Inc. All Rights Reserved.
 
 from abc import ABCMeta, abstractmethod
 import logging
@@ -35,10 +21,11 @@ from src.models.hw import HardwareVersion
 from src.models.mode import OperatingMode, APIOutputMode, IPAddressingMode
 from src.models.xaddr import XBee64BitAddress, XBee16BitAddress, XBeeIMEIAddress
 from src.models.xmsg import XBeeMessage, ExplicitXBeeMessage, IPMessage
-from src.models.xopts import TransmitOptions, RemoteATCmdOptions
+from src.models.xopts import TransmitOptions, RemoteATCmdOptions, DiscoveryOptions
 from src.models.xprot import XBeeProtocol, IPProtocol
 from src.models.xstatus import ATCommandStatus, TransmitStatus, PowerLevel, \
-    ModemStatus, CellularAssociationIndicationStatus, WiFiAssociationIndicationStatus
+    ModemStatus, CellularAssociationIndicationStatus, WiFiAssociationIndicationStatus, AssociationIndicationStatus,\
+    NetworkDiscoveryStatus
 from src.packets import xfactory
 from src.packets.aft import ApiFrameType
 from src.packets.common import ATCommPacket, TransmitPacket, RemoteATCommandPacket, ExplicitAddressingPacket
@@ -78,17 +65,15 @@ class AbstractXBeeDevice(object):
         """
         Class constructor. Instantiates a new :class:`.AbstractXBeeDevice` object with the provided parameters.
 
-        | Args:
+        Kwargs:
         |     local_xbee_device (:class:`.XBeeDevice`, optional): only necessary if XBee device is remote. The local
-                                                                  XBee device that will behave as connection
-                                                                  interface to communicate with the remote XBee one.
+                XBee device that will behave as connection interface to communicate with the remote XBee one.
         |     serial_port (:class:`.XBeeSerialPort`, optional): only necessary if the XBee device is local. The serial
-                                                                port that will be used to communicate with this XBee.
+                port that will be used to communicate with this XBee.
         |     sync_ops_timeout (Integer, default=:attr:`.AbstractXBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`): the
-                                                               timeout (in seconds) that will be applied for all
-                                                               synchronous operations.
+                timeout (in seconds) that will be applied for all synchronous operations.
 
-        | See:
+        See:
         |     :class:`.XBeeDevice`
         |     :class:`.XBeeSerialPort`
         """
@@ -98,7 +83,7 @@ class AbstractXBeeDevice(object):
         self._64bit_addr = None
         self._apply_changes_flag = True
 
-        self._is_init = False
+        self._is_open = False
         self._operating_mode = None
 
         self._local_xbee_device = local_xbee_device
@@ -112,7 +97,7 @@ class AbstractXBeeDevice(object):
         self._hardware_version = None
         self._firmware_version = None
         self._protocol = None
-        self._id = None
+        self._node_id = None
 
         self._log.addHandler(logging.NullHandler())
 
@@ -136,9 +121,9 @@ class AbstractXBeeDevice(object):
            not isinstance(object, AbstractXBeeDevice)):
             return False
         if self.get_64bit_addr() is not None or other.get_64bit_addr() is not None:
-            return self.get_64bit_addr() == other.get_64bit_addr()
+            return self.get_64bit_addr().address == other.get_64bit_addr().address
         if self.get_16bit_addr() is not None or other.get_16bit_addr() is not None:
-            return self.get_16bit_addr() == other.get_16bit_addr()
+            return self.get_16bit_addr().address == other.get_16bit_addr().address
         if self.get_node_id() is not None or other.get_node_id() is not None:
             return self.get_node_id() == other.get_node_id()
         return True
@@ -297,18 +282,18 @@ class AbstractXBeeDevice(object):
         orig_protocol = self.get_protocol()
         # Protocol:
         self._protocol = XBeeProtocol.determine_protocol(self._hardware_version.code, self._firmware_version)
-        
+
         if orig_protocol is not None and orig_protocol != XBeeProtocol.UNKNOWN and orig_protocol != self._protocol:
             raise XBeeException("Error reading device information: "
                                 "Your module seems to be %s and NOT %s. " % (self.get_protocol(), orig_protocol) +
                                 "Check if you are using the appropriate device class.")
-        
+
         # 64-bit address:
         sh = self.get_parameter("SH")
         sl = self.get_parameter("SL")
         self._64bit_addr = XBee64BitAddress(sh + sl)
         # Node ID:
-        self._id = self.get_parameter("NI")
+        self._node_id = self.get_parameter("NI").decode()
         # 16-bit address:
         if self._protocol in [XBeeProtocol.ZIGBEE,
                               XBeeProtocol.RAW_802_15_4,
@@ -323,22 +308,28 @@ class AbstractXBeeDevice(object):
         Returns the Node Identifier (``NI``) value of the XBee device.
 
         Returns:
-            Bytearray: the Node Identifier (``NI``) of the XBee device.
+            String: the Node Identifier (``NI``) of the XBee device.
         """
-        return self._id
+        return self._node_id
 
     def set_node_id(self, node_id):
         """
         Sets the Node Identifier (``NI``) value of the XBee device..
 
         Args:
-            node_id (Bytearray): the new Node Identifier (``NI``) of the XBee device.
+            node_id (String): the new Node Identifier (``NI``) of the XBee device.
 
         | Raises:
+        |     ValueError: if ``node_id`` is ``None`` or its length is greater than 20.
         |     TimeoutException: if the response is not received before the read timeout expires.
         """
-        self.set_parameter("NI", node_id)
-        self._id = node_id
+        if node_id is None:
+            raise ValueError("Node ID cannot be None")
+        if len(node_id) > 20:
+            raise ValueError("Node ID length must be less than 21")
+
+        self.set_parameter("NI", bytearray(node_id, 'utf8'))
+        self._node_id = node_id
 
     def get_hardware_version(self):
         """
@@ -398,12 +389,12 @@ class AbstractXBeeDevice(object):
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
         |     ATCommandException: if the response is not as expected.
-        |     OperationNotSupportedException: if the current protocol is ZigBee
+        |     OperationNotSupportedException: if the current protocol is not 802.15.4.
         """
-        if self.get_protocol() == XBeeProtocol.ZIGBEE:
-            raise OperationNotSupportedException("16-bit address cannot be set in ZigBee protocol")
+        if self.get_protocol() != XBeeProtocol.RAW_802_15_4:
+            raise OperationNotSupportedException("16-bit address can only be set in 802.15.4 protocol")
 
-        self.set_parameter("MY", value.value)
+        self.set_parameter("MY", value.address)
         self._16bit_addr = value
 
     def get_64bit_addr(self):
@@ -829,11 +820,11 @@ class AbstractXBeeDevice(object):
     def set_dio_value(self, io_line, io_value):
         """
         Sets the digital value (high or low) to the provided IO line.
-        
+
         Args:
             io_line (:class:`.IOLine`): the digital IO line to sets its value.
             io_value (:class:`.IOValue`): the IO value to set to the IO line.
-            
+
         | Raises:
         |     TimeoutException: if the response is not received before the read timeout expires.
         |     XBeeException: if the XBee device's serial port is closed.
@@ -850,12 +841,12 @@ class AbstractXBeeDevice(object):
     def set_dio_change_detection(self, io_lines_set):
         """
         Sets the digital IO lines to be monitored and sampled whenever their status changes.
-        
+
         A ``None`` set of lines disables this feature.
-        
+
         Args:
             io_lines_set: set of :class:`.IOLine`.
-            
+
         | Raises:
         |     TimeoutException: if the response is not received before the read timeout expires.
         |     XBeeException: if the XBee device's serial port is closed.
@@ -885,7 +876,7 @@ class AbstractXBeeDevice(object):
 
         Returns:
             :class:`.APIOutputMode`: the API output mode of the XBee device.
-            
+
         | Raises:
         |     TimeoutException: if the response is not received before the read timeout expires.
         |     XBeeException: if the XBee device's serial port is closed.
@@ -901,7 +892,7 @@ class AbstractXBeeDevice(object):
     def set_api_output_mode(self, api_output_mode):
         """
         Sets the API output mode of the XBee device.
-        
+
         Args:
             api_output_mode (:class:`.APIOutputMode`): the new API output mode of the XBee device.
 
@@ -918,28 +909,63 @@ class AbstractXBeeDevice(object):
         """
         self.set_parameter("AO", bytearray([api_output_mode.code]))
 
+    def _get_ai_status(self):
+        """
+        Returns the current association status of this XBee device.
+
+        It indicates occurrences of errors during the modem initialization
+        and connection.
+
+        Returns:
+            :class:`.AssociationIndicationStatus`: The association indication status of the XBee device.
+
+        | Raises:
+        |     TimeoutException: if the response is not received before the read timeout expires.
+        |     XBeeException: if the XBee device's serial port is closed.
+        |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
+                                             method only checks the cached value of the operating mode.
+        |     ATCommandException: if the response is not as expected.
+        """
+        value = self.get_parameter("AI")
+        return AssociationIndicationStatus.get(utils.bytes_to_int(value))
+
+    def _force_disassociate(self):
+        """
+        Forces this XBee device to immediately disassociate from the network and
+        re-attempt to associate.
+
+        Only valid for End Devices.
+
+        | Raises:
+        |     TimeoutException: if the response is not received before the read timeout expires.
+        |     XBeeException: if the XBee device's serial port is closed.
+        |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
+                                             method only checks the cached value of the operating mode.
+        |     ATCommandException: if the response is not as expected.
+        """
+        self.execute_command("DA")
+
     def _refresh_if_cached(self, parameter, value):
         """
-        Refreshes the proper cached parameter depending on 'parameter' value.
-        
-        If 'parameter' is not a cached parameter, this method does nothing.
+        Refreshes the proper cached parameter depending on ``parameter`` value.
+
+        If ``parameter`` is not a cached parameter, this method does nothing.
 
         | Args:
         |     parameter (String): the parameter to refresh its value.
-        |     value (String or Bytearray or Integer): the new value of the parameter (String for 'NI', Bytearray
-                                                      for 'MY' and Integer for 'AP'.
+        |     value (Bytearray): the new value of the parameter.
         """
         if parameter == "NI":
-            self._id = value
+            self._node_id = value.decode()
         elif parameter == "MY":
             self._16bit_addr = XBee16BitAddress(value)
         elif parameter == "AP":
-            self._operating_mode = OperatingMode.get(value)
+            self._operating_mode = OperatingMode.get(utils.bytes_to_int(value))
 
     def _get_next_frame_id(self):
         """
         Returns the next frame ID of the XBee device.
-        
+
         Returns:
             Integer: The next frame ID of the XBee device.
         """
@@ -960,7 +986,7 @@ class AbstractXBeeDevice(object):
                 raise XBeeException("XBee device's serial port closed.")
             if (self._operating_mode != OperatingMode.API_MODE and
                self._operating_mode != OperatingMode.ESCAPED_API_MODE):
-                raise InvalidOperatingModeException("Not supported operating mode: " + 
+                raise InvalidOperatingModeException("Not supported operating mode: " +
                                                     str(args[0].operating_mode.description))
             return func(self, *args, **kwargs)
         return dec_function
@@ -981,13 +1007,13 @@ class AbstractXBeeDevice(object):
     def _get_packet_by_id(self, frame_id):
         """
         Reads packets until there is one packet found with the provided frame ID.
-        
+
         Args:
             frame_id (Integer): frame ID to use for. Must be between 0 and 255.
-            
+
         Returns:
             :class:XBeePacket: the first XBee packet read whose frame ID matches the provided one.
-            
+
         | Raises:
         |     ValueError: if ``frame_id`` is less than 0 or greater than 255.
         |     TimeoutException: if there was not any XBee packet matching the provided frame ID that could be read.
@@ -1004,7 +1030,7 @@ class AbstractXBeeDevice(object):
     def __is_api_packet(xbee_packet):
         """
         Determines whether the provided XBee packet is an API packet or not.
-        
+
         | Returns:
         |     Boolean: ``True`` if the provided XBee packet is an API packet (its frame type is inside
                      :class:`.ApiFrameType` enum), ``False`` otherwise.
@@ -1020,13 +1046,13 @@ class AbstractXBeeDevice(object):
         """
         Reads the next XBee packet. Starts to read when finds the start delimiter.
         The last byte read is the checksum.
-        
+
         If there is something in the COM port buffer before the
         start delimiter, this method discards it.
-        
+
         Returns:
             :class:XBeePacket: the next XBee packet read.
-            
+
         | Raises:
         |     TimeoutException: if it could not read any new XBee packet.
         """
@@ -1057,7 +1083,7 @@ class AbstractXBeeDevice(object):
 class XBeeDevice(AbstractXBeeDevice):
     """
     This class represents a non-remote generic XBee device.
-    
+
     This class has fields that are events. Its recommended to use only the
     append() and remove() method on them, or -= and += operators.
     If you do something more with them, it's for your own risk.
@@ -1066,16 +1092,16 @@ class XBeeDevice(AbstractXBeeDevice):
     __TIMEOUT_BEFORE_COMMAND_MODE = 1.2  # seconds
     """
     Timeout to wait after entering in command mode in seconds.
-    
-    It is used to determine the operating mode of the module (this 
+
+    It is used to determine the operating mode of the module (this
     library only supports API modes, not transparent mode).
     """
 
     __TIMEOUT_ENTER_COMMAND_MODE = 1.5  # seconds
     """
     Timeout to wait after entering in command mode in seconds.
-    
-    It is used to determine the operating mode of the module (this 
+
+    It is used to determine the operating mode of the module (this
     library only supports API modes, not transparent mode).
     """
 
@@ -1104,7 +1130,7 @@ class XBeeDevice(AbstractXBeeDevice):
                  _sync_ops_timeout=AbstractXBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS):
         """
         Class constructor. Instantiates a new :class:`.XBeeDevice` with the provided parameters.
-        
+
         | Args:
         |     port (Integer or String): serial port identifier.
         |         Integer: number of XBee device, numbering starts at zero.
@@ -1115,10 +1141,10 @@ class XBeeDevice(AbstractXBeeDevice):
         |     parity (Character, default: :attr:`.serial.PARITY_NONE`): comm port parity.
         |     flow_control (Integer, default: :attr:`.FlowControl.NONE`): comm port flow control.
         |     timeout (Integer, default: 3): comm port read timeout.
-        
+
         | Raises:
         |     All exceptions raised by PySerial's Serial class constructor.
-        
+
         | See:
         |     PySerial documentation: http://pyserial.sourceforge.net
         """
@@ -1142,6 +1168,7 @@ class XBeeDevice(AbstractXBeeDevice):
 
         self._packet_listener = src.xreader.PacketListener(self._serial_port, self)
         self.__packet_queue = self._packet_listener.get_queue()
+        self.__data_queue = self._packet_listener.get_data_queue()
         self.__explicit_queue = self._packet_listener.get_explicit_queue()
 
         self._wait_for_id_event = Event()  # event for common packets (synchronous ops.).
@@ -1159,7 +1186,7 @@ class XBeeDevice(AbstractXBeeDevice):
     def create_xbee_device(cls, comm_port_data):
         """
         Creates and returns an :class:`.XBeeDevice` from data of the port to which is connected.
-        
+
         | Args:
         |     comm_port_data (Dictionary): dictionary with all comm port data needed.
         |     The dictionary keys are:
@@ -1175,7 +1202,7 @@ class XBeeDevice(AbstractXBeeDevice):
             :class:`.XBeeDevice`: the XBee device created.
 
         | Raises:
-        |     SerialException: if the port you want to initialize does not exist or is already opened.
+        |     SerialException: if the port you want to open does not exist or is already opened.
 
         | See:
         |     :class:`.XBeeDevice`
@@ -1188,42 +1215,44 @@ class XBeeDevice(AbstractXBeeDevice):
                           comm_port_data["flowControl"],
                           comm_port_data["timeout"])
 
-    def init(self):
+    def open(self):
         """
         Opens the communication with the XBee device and loads some information about it.
-        
+
         | Raises:
         |     TimeoutException: if there is any problem with the communication.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
-        |     XBeeException: If the XBee device is already initialized.
+        |     XBeeException: If the XBee device is already open.
         """
 
-        if not self._is_init:
+        if not self._is_open:
             self._serial_port.port = self.__port
             self._serial_port.open()
             self._log.info("%s port opened" % self.__port)
 
             self._packet_listener.start()
             self._operating_mode = self._determine_operating_mode()
-            if (self._operating_mode != OperatingMode.API_MODE and
-               self._operating_mode != OperatingMode.ESCAPED_API_MODE):
-                self.finalize()
-                raise InvalidOperatingModeException("Not supported operating mode: " + str(self._operating_mode))
+            if self._operating_mode == OperatingMode.UNKNOWN:
+                self.close()
+                raise InvalidOperatingModeException("Could not determine operating mode")
+            if self._operating_mode == OperatingMode.AT_MODE:
+                self.close()
+                raise InvalidOperatingModeException.from_operating_mode(self._operating_mode)
             self.read_device_info()
-            self._is_init = True
+            self._is_open = True
         else:
             raise XBeeException("XBee device already opened.")
 
-    def finalize(self):
+    def close(self):
         """
         Closes the communication with the XBee device.
-        
+
         This method guarantees that all threads running are stopped and
         the serial port is closed.
         """
         if self._network is not None:
-            self._network.stop_discovering()
+            self._network.stop_discovery_process()
             self._network = None
 
         if self._packet_listener is not None:
@@ -1237,7 +1266,7 @@ class XBeeDevice(AbstractXBeeDevice):
             self._serial_port = None
             self._log.info("%s port closed" % self.__port)
 
-        self._is_init = False
+        self._is_open = False
 
     def __get_serial_port(self):
         """
@@ -1255,7 +1284,7 @@ class XBeeDevice(AbstractXBeeDevice):
     def get_parameter(self, param):
         """
         Override.
-        
+
         | See:
         |     :meth:`.AbstractXBeeDevice.get_parameter`
         """
@@ -1270,7 +1299,7 @@ class XBeeDevice(AbstractXBeeDevice):
     def set_parameter(self, param, value):
         """
         Override.
-        
+
         See:
             :meth:`.AbstractXBeeDevice.set_parameter`
         """
@@ -1396,18 +1425,18 @@ class XBeeDevice(AbstractXBeeDevice):
     def send_data(self, remote_xbee_device, data):
         """
         Blocking method. This method sends data to a remote XBee device synchronously.
-        
+
         This method will wait for the packet response.
-        
+
         The default timeout for this method is :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`.
-        
+
         Args:
             remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to send data to.
             data (Bytearray): the raw data to send.
-            
+
         Returns:
             :class:`.XBeePacket` the response.
-            
+
         | Raises:
         |     ValueError: if ``remote_xbee_device`` is ``None``.
         |     TimeoutException: If this method can't read a response packet in
@@ -1542,9 +1571,9 @@ class XBeeDevice(AbstractXBeeDevice):
     def send_data_async(self, remote_xbee_device, data):
         """
         Non-blocking method. This method sends data to a remote XBee device.
-        
+
         This method won't wait for the response.
-        
+
         Args:
             remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to send data to.
             data (Bytearray): the raw data to send.
@@ -1582,16 +1611,16 @@ class XBeeDevice(AbstractXBeeDevice):
     def send_data_broadcast(self, data):
         """
         Sends the provided data to all the XBee nodes of the network (broadcast).
-        
-        This method blocks till a success or error transmit status arrives or 
+
+        This method blocks till a success or error transmit status arrives or
         the configured receive timeout expires.
-        
+
         The received timeout is configured using the :meth:`.AbstractXBeeDevice.set_sync_ops_timeout`
         method and can be consulted with :meth:`.AbstractXBeeDevice.get_sync_ops_timeout` method.
-        
+
         Args:
             data (Bytearray): data to send.
-        
+
         | Raises:
         |     TimeoutException: If this method can't read a response packet in
                                 :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
@@ -1604,85 +1633,70 @@ class XBeeDevice(AbstractXBeeDevice):
         return self._send_data_64(XBee64BitAddress.BROADCAST_ADDRESS, data)
 
     @AbstractXBeeDevice._before_send_method
-    def read_data(self, timeout=None, explicit=False):
+    def read_data(self, timeout=None):
         """
-        Reads a data packet sent by any remote XBee device.
+        Reads new data received by this XBee device.
 
-        Returns the first occurrence of a data packet sent by any remote XBee device, if the timeout does not
-        expires first.
-        
-        If timeout is not ``None``, this method is blocking, else non-blocking.
-        
+        If a ``timeout`` is specified, this method blocks until new data is received or the timeout expires,
+        throwing in that case a :class:`.TimeoutException`.
+
         | Args:
         |     timeout (Integer, optional): read timeout in seconds. If it's ``None``, this method is non-blocking
-                                           and it will return ``None`` if there are not packets available.
-        |     explicit (Boolean, default: False): ``True`` to read explicit data, ``False`` otherwise.
+                                           and will return ``None`` if there is no data available.
 
         Returns:
-            :class:`.XBeeMessage` or :class:`.ExplicitXBeeMessage: the read message.
+            :class:`.XBeeMessage`: the read message or ``None`` if this XBee did not receive new data.
 
         | Raises:
-        |     TimeoutException: if there is not any data packet received in the expected timeout.
+        |     ValueError: if a timeout is specified and is less than 0.
+        |     TimeoutException: if a timeout is specified and no data was received during that time.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
         |     XBeeException: if the XBee device's serial port is closed.
 
         | See:
-        |     :class:`.ExplicitXBeeMessage`
         |     :class:`.XBeeMessage`
         """
-        # if timeout is not None __packet_queue.get() will raise TimeoutException if there is no packets.
-        response_packet = self.__packet_queue.get(timeout) if not explicit else self.__explicit_queue.get(timeout)
-        # if timeout is None and there is no packets, packet = None -> return it.
-        if response_packet is None:
-            return response_packet
-        # if packet is not None, return a XBeeMessage built with it:
-        return self.__build_xbee_message(response_packet, explicit)
+        return self.__read_data_packet(None, timeout, False)
 
     @AbstractXBeeDevice._before_send_method
-    def read_data_from(self, remote_xbee_device, timeout=None, explicit=False):
+    def read_data_from(self, remote_xbee_device, timeout=None):
         """
-        Reads a data packet sent by the specified ``remote_xbee_device``.
+        Reads new data received from the given remote XBee device.
 
-        Returns the first occurrence of a data packet sent by ``remote_xbee_device``, if the timeout does
-        not expires first.
+        If a ``timeout`` is specified, this method blocks until new data is received or the timeout expires,
+        throwing in that case a :class:`.TimeoutException`.
 
-        If timeout is not ``None``, this method is blocking, else non-blocking.
+        | Args:
+        |     remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device that sent the data.
+        |     timeout (Integer, optional): read timeout in seconds. If it's ``None``, this method is non-blocking
+                                           and will return ``None`` if there is no data available.
 
-        Args:
-            remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device that sent the packet.
-            timeout (Integer): read timeout in seconds. if it's ``None`` this method will wait until a packet from
-                               the specified XBee device arrives.
-            explicit (Boolean, default: False): ``True`` to read explicit data, ``False`` otherwise.
-
-        Returns:
-            :class:`.XBeeMessage` or :class:`.ExplicitXBeeMessage: the read message sent by ``remote_xbee_device``.
+        | Returns:
+        |     :class:`.XBeeMessage`: the read message sent by ``remote_xbee_device`` or ``None`` if this XBee did
+        |                            not receive new data.
 
         | Raises:
-        |     TimeoutException: if there is not any data packet received from the remote device in the expected timeout.
+        |     ValueError: if a timeout is specified and is less than 0.
+        |     TimeoutException: if a timeout is specified and no data was received during that time.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
         |     XBeeException: if the XBee device's serial port is closed.
 
         | See:
-        |     :class:`.ExplicitXBeeMessage`
-        |     :class:`.RemoteXBeeDevice`
         |     :class:`.XBeeMessage`
+        |     :class:`.RemoteXBeeDevice`
         """
-        if not explicit:
-            packet_read = self.__packet_queue.get_by_remote(remote_xbee_device, timeout)
-        else:
-            packet_read = self.__explicit_queue.get_by_remote(remote_xbee_device, timeout)
-        return self.__build_xbee_message(packet_read)
+        return self.__read_data_packet(remote_xbee_device, timeout, False)
 
     def has_packets(self):
         """
         Returns whether the XBee device's queue has packets or not.
         This do not include explicit packets.
-        
+
         Return:
             Boolean: ``True`` if this XBee device's queue has packets, ``False`` otherwise.
-        
+
         | See:
         |     :meth:`.XBeeDevice.has_explicit_packets`
         """
@@ -1692,10 +1706,10 @@ class XBeeDevice(AbstractXBeeDevice):
         """
         Returns whether the XBee device's queue has explicit packets or not.
         This do not include non-explicit packets.
-        
+
         Return:
             Boolean: ``True`` if this XBee device's queue has explicit packets, ``False`` otherwise.
-                
+
         | See:
         |     :meth:`.XBeeDevice.has_packets`
         """
@@ -1706,12 +1720,13 @@ class XBeeDevice(AbstractXBeeDevice):
         Flushes the packets queue.
         """
         self.__packet_queue.flush()
+        self.__data_queue.flush()
         self.__explicit_queue.flush()
 
     def reset(self):
         """
         Override method.
-        
+
         | See:
         |     :meth:`.AbstractXBeeDevice.reset`
         """
@@ -1856,11 +1871,11 @@ class XBeeDevice(AbstractXBeeDevice):
         """
         Returns this XBee internal callbacks for process received
         packets.
-        
+
         This method is called by the PacketListener associated with this
         XBee to get its callbacks. These callbacks will be executed
         before user callbacks.
-        
+
         | Returns:
         |     :class:`.PacketReceived`
         """
@@ -1910,25 +1925,25 @@ class XBeeDevice(AbstractXBeeDevice):
     def __get_operating_mode(self):
         """
         Returns this XBee device's operating mode.
-        
+
         Returns:
             :class:`.OperatingMode`. This XBee device's operating mode.
         """
         return self._operating_mode
 
-    def is_initialized(self):
+    def is_open(self):
         """
-        Returns whether this XBee device is connected or not.
-        
+        Returns whether this XBee device is open or not.
+
         Returns:
-            Boolean. ``True`` if this XBee device is initialized, ``False`` otherwise.
+            Boolean. ``True`` if this XBee device is open, ``False`` otherwise.
         """
-        return self._is_init
+        return self._is_open
 
     def is_remote(self):
         """
         Override method.
-        
+
         | See:
         |     :meth:`.AbstractXBeeDevice.is_remote`
         """
@@ -1937,7 +1952,7 @@ class XBeeDevice(AbstractXBeeDevice):
     def get_network(self):
         """
         Returns this XBee device's current network.
-        
+
         | Returns:
         |     :class:`.XBeeDevice.XBeeNetwork`
         """
@@ -1950,11 +1965,11 @@ class XBeeDevice(AbstractXBeeDevice):
         """
         Blocking method. This method sends explicit data to a remote XBee device
         synchronously.
-        
+
         This method will wait for the packet response.
-        
+
         The default timeout for this method is :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`.
-        
+
         | Args:
         |     remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to send data to.
         |     data (Bytearray): the raw data to send.
@@ -1994,7 +2009,7 @@ class XBeeDevice(AbstractXBeeDevice):
                               cluster_id, profile_id, broadcast=False):
         """
         Non-blocking method. Sends an explicit data packet without waiting for the response.
-        
+
         | Args:
         |     remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to send data to.
         |     data (Bytearray): the raw data to send.
@@ -2004,7 +2019,7 @@ class XBeeDevice(AbstractXBeeDevice):
         |     profile_id (Integer): Profile ID of the transmission. Must be between 0x0 and 0xFFFF.
         |     broadcast (Boolean): ``True`` to send data in broadcast mode (``remote_xbee_device`` is ignored),
                                    ``False`` to send data to the specified ``remote_xbee_device``.
-        
+
         | Raises:
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
@@ -2043,52 +2058,49 @@ class XBeeDevice(AbstractXBeeDevice):
 
     def _read_expl_data(self, timeout=None):
         """
-        Reads an explicit data packet sent by any remote XBee device.
+        Reads new explicit data received by this XBee device.
 
-        Returns the first occurrence of an explicit data packet sent by any remote XBee device, if the timeout does
-        not expires first.
+        If a ``timeout`` is specified, this method blocks until new data is received or the timeout expires,
+        throwing in that case a :class:`.TimeoutException`.
 
-        If timeout is not ``None``, this method is blocking, else non-blocking.
-        
         | Args:
         |     timeout (Integer, optional): read timeout in seconds. If it's ``None``, this method is non-blocking
-                                           and it will return ``None`` if there are not packets available.
+                                           and will return ``None`` if there is no explicit data available.
 
         Returns:
-            :class:`.ExplicitXBeeMessage: the XBee message corresponding to the explicit data packet.
+            :class:`.ExplicitXBeeMessage`: the read message or ``None`` if this XBee did not receive new data.
 
         | Raises:
-        |     TimeoutException: if there is not any explicit data packet received in the expected timeout.
+        |     ValueError: if a timeout is specified and is less than 0.
+        |     TimeoutException: if a timeout is specified and no explicit data was received during that time.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
         |     XBeeException: if the XBee device's serial port is closed.
 
         | See:
         |     :class:`.ExplicitXBeeMessage`
-        |     :class:`.RemoteXBeeDevice`
         """
-        return self.read_data(timeout, True)
+        return self.__read_data_packet(None, timeout, True)
 
     def _read_expl_data_from(self, remote_xbee_device, timeout=None):
         """
-        Reads an explicit data packet sent by the specified ``remote_xbee_device``.
+        Reads new explicit data received from the given remote XBee device.
 
-        Returns the first occurrence of an explicit data packet sent by ``remote_xbee_device``, if the timeout does
-        not expires first.
+        If a ``timeout`` is specified, this method blocks until new data is received or the timeout expires,
+        throwing in that case a :class:`.TimeoutException`.
 
-        If timeout is not ``None``, this method is blocking, else non-blocking.
-        
         | Args:
-        |     remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device that sent the packet.
+        |     remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device that sent the explicit data.
         |     timeout (Integer, optional): read timeout in seconds. If it's ``None``, this method is non-blocking
-                                           and it will return ``None`` if there are not packets available.
+                                           and will return ``None`` if there is no data available.
 
-        Returns:
-            :class:`.ExplicitXBeeMessage: the XBee message corresponding to the explicit data packet.
+        | Returns:
+        |     :class:`.ExplicitXBeeMessage`: the read message sent by ``remote_xbee_device`` or ``None`` if this
+                                             XBee did not receive new data.
 
         | Raises:
-        |     TimeoutException: if there is not any explicit data packet received from the remote device in the
-                                expected timeout.
+        |     ValueError: if a timeout is specified and is less than 0.
+        |     TimeoutException: if a timeout is specified and no explicit data was received during that time.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
         |     XBeeException: if the XBee device's serial port is closed.
@@ -2097,44 +2109,103 @@ class XBeeDevice(AbstractXBeeDevice):
         |     :class:`.ExplicitXBeeMessage`
         |     :class:`.RemoteXBeeDevice`
         """
-        return self.read_data_from(remote_xbee_device, timeout, True)
+        return self.__read_data_packet(remote_xbee_device, timeout, True)
+
+    @AbstractXBeeDevice._before_send_method
+    def __read_data_packet(self, remote, timeout, explicit):
+        """
+        Reads a new data packet received by this XBee device during the provided timeout.
+
+        If a ``timeout`` is specified, this method blocks until new data is received or the timeout expires,
+        throwing in that case a :class:`.TimeoutException`.
+
+        | Args:
+        |     remote (:class:`.RemoteXBeeDevice`): The remote device to get a data packet from. ``None`` to read a
+                                                   data packet sent by any device.
+        |     timeout (Integer): The time to wait for a data packet in seconds.
+        |     explicit (Boolean): ``True`` to read an explicit data packet, ``False`` to read an standard data packet.
+
+        Returns:
+            :class:`.XBeeMessage` or :class:`.ExplicitXBeeMessage`: the XBee message received by this device.
+
+        | Raises:
+        |     ValueError: if a timeout is specified and is less than 0.
+        |     TimeoutException: if a timeout is specified and no data was received during that time.
+        |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
+                                             method only checks the cached value of the operating mode.
+        |     XBeeException: if the XBee device's serial port is closed.
+
+        | See:
+        |     :class:`.XBeeMessage`
+        |     :class:`.ExplicitXBeeMessage`
+        |     :class:`.RemoteXBeeDevice`
+        """
+        if timeout is not None and timeout < 0:
+            raise ValueError("Read timeout must be 0 or greater")
+
+        if not explicit:
+            if remote is None:
+                packet = self.__data_queue.get(timeout=timeout)
+            else:
+                packet = self.__data_queue.get_by_remote(remote, timeout)
+        else:
+            if remote is None:
+                packet = self.__explicit_queue.get(timeout=timeout)
+            else:
+                packet = self.__explicit_queue.get_by_remote(remote, timeout)
+
+        if packet is None:
+            return None
+
+        frame_type = packet.get_frame_type()
+        if frame_type in [ApiFrameType.RECEIVE_PACKET, ApiFrameType.RX_16, ApiFrameType.RX_64]:
+            return self.__build_xbee_message(packet, False)
+        elif frame_type == ApiFrameType.EXPLICIT_RX_INDICATOR:
+            return self.__build_xbee_message(packet, True)
+        else:
+            return None
 
     def _enter_at_command_mode(self):
         """
-        Attempts to enter in AT command mode.
-        
+        Attempts to put this device in AT Command mode. Only valid if device is
+        working in AT mode.
+
         Returns:
             Boolean: ``True`` if the XBee device has entered in AT command mode, ``False`` otherwise.
-            
+
         | Raises:
         |     SerialTimeoutException: if there is any error trying to write within the serial port.
         """
+        if self._operating_mode != OperatingMode.AT_MODE:
+            raise InvalidOperatingModeException("Invalid mode. Command mode can be only accessed while in AT mode")
         listening = self._packet_listener is not None and self._packet_listener.is_running()
         if listening:
             self._packet_listener.stop()
             self._packet_listener.join()
 
         self._serial_port.flushInput()
+
+        # It is necessary to wait at least 1 second to enter in command mode after sending any data to the device.
         time.sleep(self.__TIMEOUT_BEFORE_COMMAND_MODE)
+        # Send the command mode sequence.
         b = bytearray(self.__COMMAND_MODE_CHAR, "utf8")
         self._serial_port.write(b)
         self._serial_port.write(b)
         self._serial_port.write(b)
+        # Wait some time to let the module generate a response.
         time.sleep(self.__TIMEOUT_ENTER_COMMAND_MODE)
+        # Read data from the device (it should answer with 'OK\r').
         data = self._serial_port.read_existing()
 
-        if listening:
-            self._packet_listener.start()
-
-        return str(data) in self.__COMMAND_MODE_OK
+        return data.decode() in self.__COMMAND_MODE_OK
 
     def _determine_operating_mode(self):
         """
         Determines and returns the operating mode of the XBee device.
-        
+
         If the XBee device is not in AT command mode, this method attempts
         to enter on it.
-        
+
         Returns:
             :class:`.OperatingMode`
 
@@ -2146,6 +2217,7 @@ class XBeeDevice(AbstractXBeeDevice):
             response = self.get_parameter("AP")
             return OperatingMode.get(response[0])
         except TimeoutException:
+            self._operating_mode = OperatingMode.AT_MODE
             try:
                 # If there is timeout exception and is possible to enter
                 # in AT command mode, the current operating mode is AT.
@@ -2159,7 +2231,7 @@ class XBeeDevice(AbstractXBeeDevice):
         """
         Perform all operations needed for a synchronous operation when the packet
         listener is online. This operations are:
-        
+
             1. Puts "_sync_packet" to ``None``, to discard the last sync. packet read.
             2. Refresh "_sync_packet" to be used by the thread in charge of the synchronous read.
             3. Tells the packet listener that this XBee device is waiting for a packet with a determined frame ID.
@@ -2171,7 +2243,7 @@ class XBeeDevice(AbstractXBeeDevice):
             7. Returns the received packet if it has arrived, ``None`` otherwise.
 
         This method must be only used when the packet listener is online.
-        
+
         At the end of this method, the class attribute ``_sync_packet`` will be
         the packet read by this method, or ``None`` if the previous was not possible.
         Note that ``_sync_packet`` will remain being "the last packet read in a
@@ -2224,22 +2296,22 @@ class XBeeDevice(AbstractXBeeDevice):
         Sends a packet to the XBee device and waits for the response.
         The packet to send will be escaped or not depending on the current
         operating mode.
-        
+
         This method can be synchronous or asynchronous.
-        
+
         If is synchronous, this method  will discards all response
         packets until it finds the one that has the appropriate frame ID,
         that is, the sent packet's frame ID.
-        
+
         If is asynchronous, this method does not wait for any packet. Returns ``None``.
-        
+
         Args:
             packet (:class:`.XBeePacket`): The packet to send.
             sync (Boolean): ``True`` to wait for the response of the sent packet and return it, ``False`` otherwise.
-            
+
         Returns:
             :class:`.XBeePacket`: The response packet if ``sync`` is ``True``, ``None`` otherwise.
-            
+
         | Raises:
         |     TimeoutException: if ``sync`` is ``True`` and the response packet for the sent one cannot be read.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
@@ -2305,7 +2377,7 @@ class XBeeDevice(AbstractXBeeDevice):
                                 cluster_id, profile_id, broadcast=False):
         """
         Builds and returns an explicit data packet with the provided parameters.
-        
+
         | Args:
         |     remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to send data to.
         |     data (Bytearray): the raw data to send.
@@ -2315,10 +2387,10 @@ class XBeeDevice(AbstractXBeeDevice):
         |     profile_id (Integer): Profile ID of the transmission. Must be between 0x0 and 0xFFFF.
         |     broadcast (Boolean): ``True`` to send data in broadcast mode (``remote_xbee_device`` is ignored), else
         |                          ``False`` to send data to the specified ``remote_xbee_device``.
-        
+
         Returns:
             :class:`.ExplicitAddressingPacket`: the explicit packet generated with the provided parameters.
-        
+
         | Raises:
         |     All exceptions raised by :meth:`.ExplicitAddressingPacket.__init__`
 
@@ -2371,36 +2443,56 @@ class Raw802Device(XBeeDevice):
 
         | Raises:
         |     All exceptions raised by :meth:`.XBeeDevice.__init__` constructor.
-        
+
         | See:
         |     :class:`.XBeeDevice`
         |     :meth:`.XBeeDevice.__init__`
         """
         super().__init__(port, baud_rate)
 
-    def init(self):
+    def open(self):
         """
         Override.
-        
+
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
-        
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
+
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if not self.is_remote() and self.get_protocol() != XBeeProtocol.RAW_802_15_4:
             raise XBeeException("Invalid protocol.")
+
+    def get_network(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.XBeeDevice.get_network`
+        """
+        if self._network is None:
+            self._network = Raw802Network(self)
+        return self._network
 
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.get_protocol`
         """
         return XBeeProtocol.RAW_802_15_4
+
+    def get_ai_status(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.AbstractXBeeDevice._get_ai_status`.
+        """
+        return super()._get_ai_status()
 
     def send_data_64(self, x64addr, data):
         """
@@ -2532,25 +2624,36 @@ class DigiMeshDevice(XBeeDevice):
         """
         super().__init__(port, baud_rate)
 
-    def init(self):
+    def open(self):
         """
         Override.
-        
+
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
-        
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
+
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if self.get_protocol() != XBeeProtocol.DIGI_MESH:
             raise XBeeException("Invalid protocol.")
+
+    def get_network(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.XBeeDevice.get_network`
+        """
+        if self._network is None:
+            self._network = DigiMeshNetwork(self)
+        return self._network
 
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.get_protocol`
         """
@@ -2577,7 +2680,7 @@ class DigiMeshDevice(XBeeDevice):
     def read_expl_data(self, timeout=None):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.read_expl_data`
         """
@@ -2586,7 +2689,7 @@ class DigiMeshDevice(XBeeDevice):
     def read_expl_data_from(self, remote_xbee_device, timeout=None):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.read_expl_data_from`
         """
@@ -2596,7 +2699,7 @@ class DigiMeshDevice(XBeeDevice):
                        cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.send_expl_data`
         """
@@ -2606,7 +2709,7 @@ class DigiMeshDevice(XBeeDevice):
     def send_expl_data_broadcast(self, data, src_endpoint, dest_endpoint, cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice._send_expl_data_broadcast`
         """
@@ -2616,7 +2719,7 @@ class DigiMeshDevice(XBeeDevice):
                              cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.send_expl_data_async`
         """
@@ -2648,25 +2751,36 @@ class DigiPointDevice(XBeeDevice):
         """
         super().__init__(port, baud_rate)
 
-    def init(self):
+    def open(self):
         """
         Override.
-        
+
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
-        
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
+
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if self.get_protocol() != XBeeProtocol.DIGI_POINT:
             raise XBeeException("Invalid protocol.")
+
+    def get_network(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.XBeeDevice.get_network`
+        """
+        if self._network is None:
+            self._network = DigiPointNetwork(self)
+        return self._network
 
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.get_protocol`
         """
@@ -2693,7 +2807,7 @@ class DigiPointDevice(XBeeDevice):
     def read_expl_data(self, timeout=None):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.read_expl_data`
         """
@@ -2702,7 +2816,7 @@ class DigiPointDevice(XBeeDevice):
     def read_expl_data_from(self, remote_xbee_device, timeout=None):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.read_expl_data_from`
         """
@@ -2712,7 +2826,7 @@ class DigiPointDevice(XBeeDevice):
                        cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.send_expl_data`
         """
@@ -2722,7 +2836,7 @@ class DigiPointDevice(XBeeDevice):
     def send_expl_data_broadcast(self, data, src_endpoint, dest_endpoint, cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice._send_expl_data_broadcast`
         """
@@ -2732,7 +2846,7 @@ class DigiPointDevice(XBeeDevice):
                              cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.send_expl_data_async`
         """
@@ -2764,29 +2878,58 @@ class ZigBeeDevice(XBeeDevice):
         """
         super().__init__(port, baud_rate)
 
-    def init(self):
+    def open(self):
         """
         Override.
-        
+
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
-        
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
+
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if self.get_protocol() != XBeeProtocol.ZIGBEE:
             raise XBeeException("Invalid protocol.")
+
+    def get_network(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.XBeeDevice.get_network`
+        """
+        if self._network is None:
+            self._network = ZigBeeNetwork(self)
+        return self._network
 
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.get_protocol`
         """
         return XBeeProtocol.ZIGBEE
+
+    def get_ai_status(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.AbstractXBeeDevice._get_ai_status`.
+        """
+        return super()._get_ai_status()
+
+    def force_disassociate(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.AbstractXBeeDevice._force_disassociate`.
+        """
+        super()._force_disassociate()
 
     def send_data_64_16(self, x64addr, x16addr, data):
         """
@@ -2809,7 +2952,7 @@ class ZigBeeDevice(XBeeDevice):
     def read_expl_data(self, timeout=None):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice._read_expl_data`
         """
@@ -2818,7 +2961,7 @@ class ZigBeeDevice(XBeeDevice):
     def read_expl_data_from(self, remote_xbee_device, timeout=None):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice._read_expl_data_from`
         """
@@ -2828,7 +2971,7 @@ class ZigBeeDevice(XBeeDevice):
                        cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice._send_expl_data`
         """
@@ -2838,7 +2981,7 @@ class ZigBeeDevice(XBeeDevice):
     def send_expl_data_broadcast(self, data, src_endpoint, dest_endpoint, cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice._send_expl_data_broadcast`
         """
@@ -2848,7 +2991,7 @@ class ZigBeeDevice(XBeeDevice):
                              cluster_id, profile_id):
         """
         Override.
-        
+
         | See:
         |     :meth:`.XBeeDevice.send_expl_data_async`
         """
@@ -2862,11 +3005,11 @@ class ZigBeeDevice(XBeeDevice):
         """
         Blocking method. This method sends multicast data to the provided group ID
         synchronously.
-        
+
         This method will wait for the packet response.
-        
+
         The default timeout for this method is :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`.
-        
+
         Args:
             group_id (:class:`.XBee16Bitaddress`): the 16 bit address of the multicast group.
             data (Bytearray): the raw data to send.
@@ -2874,10 +3017,10 @@ class ZigBeeDevice(XBeeDevice):
             dest_endpoint (Integer): destination endpoint of the transmission. 1 byte.
             cluster_id (Integer): Cluster ID of the transmission. Must be between 0x0 and 0xFFFF.
             profile_id (Integer): Profile ID of the transmission. Must be between 0x0 and 0xFFFF.
-            
+
         Returns:
             :class:`.XBeePacket`: the response packet.
-            
+
         | Raises:
         |     TimeoutException: If this method can't read a response packet in
                                 :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
@@ -2896,16 +3039,16 @@ class ZigBeeDevice(XBeeDevice):
                                                   group_id, src_endpoint, dest_endpoint,
                                                   cluster_id, profile_id, 0,
                                                   TransmitOptions.ENABLE_MULTICAST.value, data)
-        
+
         return self.send_packet_sync_and_get_response(packet_to_send)
 
     @AbstractXBeeDevice._before_send_method
     def send_multicast_data_async(self, group_id, data, src_endpoint, dest_endpoint, cluster_id, profile_id):
         """
         Non-blocking method. This method sends multicast data to the provided group ID.
-        
+
         This method won't wait for the response.
-        
+
         Args:
             group_id (:class:`.XBee16Bitaddress`): the 16 bit address of the multicast group.
             data (Bytearray): the raw data to send.
@@ -2913,7 +3056,7 @@ class ZigBeeDevice(XBeeDevice):
             dest_endpoint (Integer): destination endpoint of the transmission. 1 byte.
             cluster_id (Integer): Cluster ID of the transmission. Must be between 0x0 and 0xFFFF.
             profile_id (Integer): Profile ID of the transmission. Must be between 0x0 and 0xFFFF.
-        
+
         | Raises:
         |     TimeoutException: If this method can't read a response packet in
                                 :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
@@ -2924,12 +3067,12 @@ class ZigBeeDevice(XBeeDevice):
         | See:
         |     :class:`XBee16Bitaddress`
         """
-        packet_to_send = ExplicitAddressingPacket(self._get_next_frame_id(), 
+        packet_to_send = ExplicitAddressingPacket(self._get_next_frame_id(),
                                                   XBee64BitAddress.UNKNOWN_ADDRESS,
                                                   group_id, src_endpoint, dest_endpoint,
                                                   cluster_id, profile_id, 0,
                                                   TransmitOptions.ENABLE_MULTICAST.value, data)
-        
+
         self.send_packet(packet_to_send)
 
 
@@ -3321,7 +3464,7 @@ class IPDevice(XBeeDevice):
         queue = self._packet_listener.get_ip_queue()
 
         if ip_addr is None:
-            packet = queue.get(timeout)
+            packet = queue.get(timeout=timeout)
         else:
             packet = queue.get_by_ip(ip_addr, timeout)
 
@@ -3496,18 +3639,18 @@ class CellularDevice(IPDevice):
 
         self._imei_addr = None
 
-    def init(self):
+    def open(self):
         """
         Override.
 
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
 
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if self.get_protocol() not in [XBeeProtocol.CELLULAR, XBeeProtocol.CELLULAR_NBIOT]:
             raise XBeeException("Invalid protocol.")
 
@@ -3892,18 +4035,18 @@ class NBIoTDevice(LPWANDevice):
 
         self._imei_addr = None
 
-    def init(self):
+    def open(self):
         """
         Override.
 
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
 
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if self.get_protocol() != XBeeProtocol.CELLULAR_NBIOT:
             raise XBeeException("Invalid protocol.")
 
@@ -3947,18 +4090,18 @@ class WiFiDevice(IPDevice):
         self.__scanning_aps = False
         self.__scanning_aps_error = False
 
-    def init(self):
+    def open(self):
         """
         Override.
 
         | Raises:
         |     XBeeException: if the protocol is invalid.
-        |     All exceptions raised by :meth:`.XBeeDevice.init`.
+        |     All exceptions raised by :meth:`.XBeeDevice.open`.
 
         | See:
-        |     :meth:`.XBeeDevice.init`
+        |     :meth:`.XBeeDevice.open`
         """
-        super().init()
+        super().open()
         if self.get_protocol() != XBeeProtocol.XBEE_WIFI:
             raise XBeeException("Invalid protocol.")
 
@@ -4516,7 +4659,7 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
                  x16bit_addr=XBee16BitAddress.UNKNOWN_ADDRESS, node_id=None):
         """
         Class constructor. Instantiates a new :class:`.RemoteXBeeDevice` with the provided parameters.
-        
+
         Args:
             local_xbee_device (:class:`.XBeeDevice`): the local XBee device associated with the remote one.
             x64bit_addr (:class:`.XBee64BitAddress`): the 64-bit address of the remote XBee device.
@@ -4534,12 +4677,12 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
         self._local_xbee_device = local_xbee_device
         self._64bit_addr = x64bit_addr
         self._16bit_addr = x16bit_addr
-        self._id = node_id
+        self._node_id = node_id
 
     def get_parameter(self, parameter):
         """
         Override.
-        
+
         See:
             :meth:`.AbstractXBeeDevice.get_parameter`
         """
@@ -4556,7 +4699,7 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
                                                RemoteATCmdOptions.NONE.value,
                                                parameter)
         response = self._local_xbee_device.send_packet_sync_and_get_response(packet_to_send)  # raises TimeoutException
-        
+
         if response.status != ATCommandStatus.OK:
             raise ATCommandException("Error getting parameter, command status: " + response.status.description)
         return response.command_value
@@ -4564,7 +4707,7 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
     def set_parameter(self, parameter, value):
         """
         Override.
-           
+
         See:
             :meth:`.AbstractXBeeDevice.set_parameter`
         """
@@ -4594,7 +4737,7 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
     def is_remote(self):
         """
         Override method.
-        
+
         | See:
         |     :meth:`.AbstractXBeeDevice.is_remote`
         """
@@ -4603,23 +4746,23 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
     def reset(self):
         """
         Override method.
-        
+
         | See:
         |     :meth:`.AbstractXBeeDevice.reset`
         """
         try:
             self.execute_command("FR")
         except TimeoutException as te:
-            if self._protocol != XBeeProtocol.RAW_802_15_4:
+            if self._local_xbee_device.get_protocol() != XBeeProtocol.RAW_802_15_4:
                 raise te
 
     def get_local_xbee_device(self):
         """
         Returns the local XBee device associated to the remote one.
-        
+
         | Returns:
         |     :class:`.XBeeDevice`
-        
+
         """
         return self._local_xbee_device
 
@@ -4647,35 +4790,8 @@ class RemoteXBeeDevice(AbstractXBeeDevice):
         """
         return self._local_xbee_device.serial_port
 
-    def set_16bit_addr(self, x16bit_addr):
-        """
-        Override method.
-
-        | See:
-        |     :meth:`.AbstractXBeeDevice.set_16bit_addr`
-        """
-        self.set_16bit_addr(x16bit_addr)
-
-    def set_64bit_addr(self, x64bit_addr):
-        """
-        Override method.
-
-        | See:
-        |     :meth:`.AbstractXBeeDevice.set_64bit_addr`
-        """
-        self.set_64bit_addr(x64bit_addr)
-
-    def set_node_id(self, node_id):
-        """
-        Override method.
-
-        | See:
-        |     :meth:`.AbstractXBeeDevice.set_node_id`
-        """
-        self.set_node_id(node_id)
-
     def __str__(self):
-        node_id = "" if self.get_node_id() is None else self.get_node_id().decode()
+        node_id = "" if self.get_node_id() is None else self.get_node_id()
         return "%s - %s" % (self.get_64bit_addr(), node_id)
 
 
@@ -4712,11 +4828,35 @@ class RemoteRaw802Device(RemoteXBeeDevice):
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.RemoteXBeeDevice.get_protocol`.
         """
         return XBeeProtocol.RAW_802_15_4
+
+    def set_64bit_addr(self, address):
+        """
+        Sets the 64-bit address of this remote 802.15.4 device.
+
+        Args:
+            address (:class:`.XBee64BitAddress`): The 64-bit address to be set to the device.
+
+        | Raises:
+        |     ValueError: if ``address`` is ``None``.
+        """
+        if address is None:
+            raise ValueError("64-bit address cannot be None")
+
+        self._64bit_addr = address
+
+    def get_ai_status(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.AbstractXBeeDevice._get_ai_status`.
+        """
+        return super()._get_ai_status()
 
 
 class RemoteDigiMeshDevice(RemoteXBeeDevice):
@@ -4724,14 +4864,13 @@ class RemoteDigiMeshDevice(RemoteXBeeDevice):
     This class represents a remote DigiMesh XBee device.
     """
 
-    def __init__(self, local_xbee_device, x64bit_addr=None, x16bit_addr=None, node_id=None):
+    def __init__(self, local_xbee_device, x64bit_addr=None, node_id=None):
         """
         Class constructor. Instantiates a new :class:`.RemoteDigiMeshDevice` with the provided parameters.
 
         Args:
             local_xbee_device (:class:`.XBeeDevice`): the local XBee device associated with the remote one.
             x64bit_addr (:class:`.XBee64BitAddress`): the 64-bit address of the remote XBee device.
-            x16bit_addr (:class:`.XBee16BitAddress`): the 16-bit address of the remote XBee device.
             node_id (String, optional): the node identifier of the remote XBee device. Optional.
 
         | Raises:
@@ -4740,19 +4879,18 @@ class RemoteDigiMeshDevice(RemoteXBeeDevice):
 
         | See:
         |     :class:`RemoteXBeeDevice`
-        |     :class:`XBee16BitAddress`
         |     :class:`XBee64BitAddress`
         |     :class:`XBeeDevice`
         """
         if local_xbee_device.get_protocol() != XBeeProtocol.DIGI_MESH:
             raise XBeeException("Invalid protocol.")
 
-        super().__init__(local_xbee_device, x64bit_addr, x16bit_addr, node_id)
+        super().__init__(local_xbee_device, x64bit_addr, None, node_id)
 
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.RemoteXBeeDevice.get_protocol`.
         """
@@ -4764,14 +4902,13 @@ class RemoteDigiPointDevice(RemoteXBeeDevice):
     This class represents a remote DigiPoint XBee device.
     """
 
-    def __init__(self, local_xbee_device, x64bit_addr=None, x16bit_addr=None, node_id=None):
+    def __init__(self, local_xbee_device, x64bit_addr=None, node_id=None):
         """
         Class constructor. Instantiates a new :class:`.RemoteDigiMeshDevice` with the provided parameters.
 
         Args:
             local_xbee_device (:class:`.XBeeDevice`): the local XBee device associated with the remote one.
             x64bit_addr (:class:`.XBee64BitAddress`): the 64-bit address of the remote XBee device.
-            x16bit_addr (:class:`.XBee16BitAddress`): the 16-bit address of the remote XBee device.
             node_id (String, optional): the node identifier of the remote XBee device. Optional.
 
         | Raises:
@@ -4780,19 +4917,18 @@ class RemoteDigiPointDevice(RemoteXBeeDevice):
 
         | See:
         |     :class:`RemoteXBeeDevice`
-        |     :class:`XBee16BitAddress`
         |     :class:`XBee64BitAddress`
         |     :class:`XBeeDevice`
         """
         if local_xbee_device.get_protocol() != XBeeProtocol.DIGI_POINT:
             raise XBeeException("Invalid protocol.")
 
-        super().__init__(local_xbee_device, x64bit_addr, x16bit_addr, node_id)
+        super().__init__(local_xbee_device, x64bit_addr, None, node_id)
 
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.RemoteXBeeDevice.get_protocol`.
         """
@@ -4832,38 +4968,37 @@ class RemoteZigBeeDevice(RemoteXBeeDevice):
     def get_protocol(self):
         """
         Override.
-        
+
         | See:
         |     :meth:`.RemoteXBeeDevice.get_protocol`.
         """
         return XBeeProtocol.ZIGBEE
 
+    def get_ai_status(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.AbstractXBeeDevice._get_ai_status`.
+        """
+        return super()._get_ai_status()
+
+    def force_disassociate(self):
+        """
+        Override.
+
+        | See:
+        |     :meth:`.AbstractXBeeDevice._force_disassociate`.
+        """
+        super()._force_disassociate()
+
 
 class XBeeNetwork(object):
     """
     This class represents an XBee Network.
-     
-    The network allows the discovery of remote devices in the same network 
+
+    The network allows the discovery of remote devices in the same network
     as the local one and stores them.
-    """
-
-    ERR_READ_TIMEOUT = 0x00
-    """
-    :class:`.DeviceDiscoveryFinished` event callbacks will receive this code
-    when a timeout error is raised during discovering process.
-    """
-
-    ERR_DETERMINE_SLEEP_SUPPORT = 0x01
-    """
-    :class:`.DeviceDiscoveryFinished` event callbacks will receive this code
-    when it was unable to determine the XBee device's sleep support
-    during discovering proccess.
-    """
-
-    ERR_DISCOVERY_FINISHED_OK = 0x02
-    """
-    :class:`.DeviceDiscoveryFinished` event callbacks will receive this code
-    when a discovering process finish.
     """
 
     ND_PACKET_FINISH = 0x01
@@ -4874,26 +5009,6 @@ class XBeeNetwork(object):
     ND_PACKET_REMOTE = 0x02
     """
     Flag that indicates a discovery process packet with info about a remote XBee device.
-    """
-
-    DSCVRY_OPTS_NONE = 0x00
-    """
-    Discovery process options: ``None``
-    """
-
-    DSCVRY_OPTS_APPEND_DD = 0x01
-    """
-    Discovery process options: Append ``DD`` value (to ``ND`` responses or API node identification frames)
-    """
-
-    DSCVRY_OPTS_SELF_RESPONSE = 0x02
-    """
-    Discovery process options: Local XBee device sends ``ND`` response frame when ``ND`` is issued.
-    """
-
-    DSCVRY_OPTS_APPEND_RSSI = 0x04
-    """
-    Discovery process options: Include RSSI information in response.
     """
 
     # Default timeout for discovering process in case of
@@ -4910,11 +5025,17 @@ class XBeeNetwork(object):
 
     def __init__(self, xbee_device):
         """
-        Class constructor. Instantiates a new :class:`.XBeeNetwork` with the provided parameters.
-        
+        Class constructor. Instantiates a new ``XBeeNetwork``.
+
         Args:
-            xbee_device (:class:`.AbstractXBeeDevice`): the XBee device owner of the network.
+            xbee_device (:class:`.XBeeDevice`): the local XBee device to get the network from.
+
+        | Raises:
+        |     ValueError: if ``xbee_device`` is ``None``.
         """
+        if xbee_device is None:
+            raise ValueError("Local XBee device cannot be None")
+
         self.__xbee_device = xbee_device
         self.__devices_list = []
         self.__last_search_dev_list = []
@@ -4929,14 +5050,20 @@ class XBeeNetwork(object):
     def start_discovery_process(self):
         """
         Starts the discovery process. This method is not blocking.
-        
+
         The discovery process will be running until the configured
         timeout expires or, in case of 802.15.4, until the 'end' packet
         is read.
-        
+
         It may be that, after the timeout expires, there are devices
-        that continue sending  discovery packets to this XBee device. In this
+        that continue sending discovery packets to this XBee device. In this
         case, these devices will not be added to the network.
+
+        | See:
+        |     :meth:`.XBeeNetwork.add_device_discovered_callback`
+        |     :meth:`.XBeeNetwork.add_discovery_process_finished_callback`
+        |     :meth:`.XBeeNetwork.del_device_discovered_callback`
+        |     :meth:`.XBeeNetwork.del_discovery_process_finished_callback`
         """
         with self.__lock:
             if self.__discovering:
@@ -4946,40 +5073,35 @@ class XBeeNetwork(object):
         self.__discovering = True
         self.__discovery_thread.start()
 
-#     def discover_device(self, device_id):
-#         """
-#         Blocking method. Attempts to retrieve a specific remote XBee device from the network.
-#
-#         Args:
-#             device_id (Bytearray): the XBee device's node id.
-#
-#         Returns:
-#             The discovered XBee device if it could be found.
-#
-#         Raises:
-#             TimeoutException: If no XBee device could be found in the configured
-#                 discovering timeout.
-#
-#         """
-#         remote = self.try_discover_device(device_id)
-#         if (remote is None):
-#             raise TimeoutException("Specified XBee device could not be found.")
-#         return remote
-
-    def discover_device(self, device_id):
+    def stop_discovery_process(self):
         """
-        Blocking method. Attempts to retrieve a specific remote XBee device from the network.
-        
+        Stops the discovery process if it is running.
+
+        Note that DigiMesh/DigiPoint devices are blocked until the discovery
+        time configured (NT parameter) has elapsed, so if you try to get/set
+        any parameter during the discovery process you will receive a timeout
+        exception.
+        """
+        if self.__discovering:
+            with self.__lock:
+                self.__discovering = False
+
+    def discover_device(self, node_id):
+        """
+        Blocking method. Discovers and reports the first remote XBee device that matches the
+        supplied identifier.
+
         Args:
-            device_id (Bytearray): the node identifier of the XBee device to discover/get.
-            
-        Returns:
-            :class:`.RemoteXBeeDevice`: the remote XBee device discovered if it could be found, ``None`` otherwise.
+            node_id (String): the node identifier of the device to be discovered.
+
+        | Returns:
+        |     :class:`.RemoteXBeeDevice`: the discovered remote XBee device with the given identifier,
+                                          ``None`` if the timeout expires and the device was not found.
         """
         try:
             with self.__lock:
-                self.__sought_device_id = device_id
-            self.__discover_devices(device_id)
+                self.__sought_device_id = node_id
+            self.__discover_devices(node_id)
         finally:
             with self.__lock:
                 self.__sought_device_id = None
@@ -4987,56 +5109,30 @@ class XBeeNetwork(object):
                 self.__discovered_device = None
                 return remote
 
-#     def discover_devices(self, device_id_list):
-#         """
-#         Blocking method. Attempts to discover a list of devices and add them to the
-#         current network.
-#
-#         This method does not guarantee that all devices of 'device_id_list'
-#         will be found, even if they exist physically. This will depend on the node
-#         discovery timeout. (ND)
-#
-#         Args:
-#             device_id_list (List): List of devices id.
-#
-#         Returns:
-#             List: a list with the discovered devices. It may not contain all devices specified
-#             in 'device_id_list'
-#
-#         | Raises:
-#         |     :class:`.TimeoutException`: if not all the devices might be found in the current
-#         |         "discovery network timeout" (ND).
-#
-#         """
-#         devices = self.try_discover_devices()
-#         if (len(devices) != len(device_id_list)):
-#             raise TimeoutException("Not all devices could be found.")
-
     def discover_devices(self, device_id_list):
         """
         Blocking method. Attempts to discover a list of devices and add them to the
         current network.
-        
+
         This method does not guarantee that all devices of ``device_id_list``
         will be found, even if they exist physically. This will depend on the node
         discovery operation (``ND``) and timeout.
-        
+
         Args:
             device_id_list (List): list of device IDs to discover.
-            
+
         Returns:
             List: a list with the discovered devices. It may not contain all devices specified in ``device_id_list``
         """
         self.start_discovery_process()
         while self.is_discovery_running():
             time.sleep(0.1)
-        return filter(lambda x: x.get_node_id() in device_id_list,
-                      self.__last_search_dev_list)
+        return filter(lambda x: x.get_node_id() in device_id_list, self.__last_search_dev_list)
 
     def is_discovery_running(self):
         """
         Returns whether the discovery process is running or not.
-        
+
         Returns:
             Boolean: ``True`` if the discovery process is running, ``False`` otherwise.
         """
@@ -5045,11 +5141,11 @@ class XBeeNetwork(object):
     def get_devices(self):
         """
         Returns a copy of the XBee devices list of the network.
-        
+
         If another XBee device is added to the list before the execution
         of this method, this XBee device will not be added to the list returned
         by this method.
-        
+
         Returns:
             List: a copy of the XBee devices list of the network.
         """
@@ -5083,6 +5179,11 @@ class XBeeNetwork(object):
         | Args:
         |     callback (Function): the callback. Receives one argument.
         |         The discovered remote XBee device as a :class:`.RemoteXBeeDevice`
+
+        | See:
+        |     :meth:`.XBeeNetwork.del_device_discovered_callback`
+        |     :meth:`.XBeeNetwork.add_discovery_process_finished_callback`
+        |     :meth:`.XBeeNetwork.del_discovery_process_finished_callback`
         """
         self.__device_discovered += callback
 
@@ -5093,21 +5194,13 @@ class XBeeNetwork(object):
         | Args:
         |     callback (Function): the callback. Receives one argument.
         |         The event code as an :class:`.Integer`
+
+        | See:
+        |     :meth:`.XBeeNetwork.del_discovery_process_finished_callback`
+        |     :meth:`.XBeeNetwork.add_device_discovered_callback`
+        |     :meth:`.XBeeNetwork.del_device_discovered_callback`
         """
         self.__device_discovery_finished += callback
-
-    def del_discovery_process_finished_callback(self, callback):
-        """
-        Deletes a callback for the callback list of :class:`.DiscoveryProcessFinished` event.
-        
-        Args:
-            callback (Function): the callback to delete.
-
-        | Raises:
-        |     ValueError: if ``callback`` is not in the callback list of :class:`.DiscoveryProcessFinished`
-        |                 event.
-        """
-        self.__device_discovered -= callback
 
     def del_device_discovered_callback(self, callback):
         """
@@ -5119,6 +5212,29 @@ class XBeeNetwork(object):
         | Raises:
         |     ValueError: if ``callback`` is not in the callback list of :class:`.DeviceDiscovered`
         |                 event.
+
+        | See:
+        |     :meth:`.XBeeNetwork.add_device_discovered_callback`
+        |     :meth:`.XBeeNetwork.add_discovery_process_finished_callback`
+        |     :meth:`.XBeeNetwork.del_discovery_process_finished_callback`
+        """
+        self.__device_discovered -= callback
+
+    def del_discovery_process_finished_callback(self, callback):
+        """
+        Deletes a callback for the callback list of :class:`.DiscoveryProcessFinished` event.
+
+        Args:
+            callback (Function): the callback to delete.
+
+        | Raises:
+        |     ValueError: if ``callback`` is not in the callback list of :class:`.DiscoveryProcessFinished`
+        |                 event.
+
+        | See:
+        |     :meth:`.XBeeNetwork.add_discovery_process_finished_callback`
+        |     :meth:`.XBeeNetwork.add_device_discovered_callback`
+        |     :meth:`.XBeeNetwork.del_device_discovered_callback`
         """
         self.__device_discovery_finished -= callback
 
@@ -5129,13 +5245,13 @@ class XBeeNetwork(object):
         with self.__lock:
             self.__devices_list = []
 
-    def get_network_discovery_opts(self):
+    def get_discovery_options(self):
         """
         Returns the network discovery process options.
-        
+
         Returns:
             Bytearray: the parameter value.
-        
+
         | Raises:
         |     TimeoutException: if the response is not received before the read timeout expires.
         |     XBeeException: if the XBee device's serial port is closed.
@@ -5145,43 +5261,34 @@ class XBeeNetwork(object):
         """
         return self.__xbee_device.get_parameter("NO")
 
-    def set_network_discovery_opts(self, options):
+    def set_discovery_options(self, options):
         """
-        Sets the network discovery process options.
-        
+        Configures the discovery options (``NO`` parameter) with the given value.
+
         | Args:
-        |     options (Integer): must be
-        |         :attr:`.XBeeNetwork.DSCVRY_OPTS_NONE`: Supported by all protocols.
-        |         :attr:`.XBeeNetwork.DSCVRY_OPTS_SELF_RESPONSE`: Supported by all protocols.
-        |         :attr:`.XBeeNetwork.DSCVRY_OPTS_APPEND_DD`: Not supported by 802.15.4.
-        
+        |     options (Set of :class:`.DiscoveryOptions`): new discovery options, empty set to clear the options.
+
         | Raises:
+        |     ValueError: if ``options`` is ``None``.
         |     TimeoutException: if the response is not received before the read timeout expires.
         |     XBeeException: if the XBee device's serial port is closed.
         |     InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                                              method only checks the cached value of the operating mode.
         |     ATCommandException: if the response is not as expected.
-        |     OperationNotSupportedException: if the protocol is 802.15.4 and options are
-                                              :attr:`.XBeeNetwork.DSCVRY_OPTS_APPEND_DD`.
+
+        | See:
+        |     :class:`.DiscoveryOptions`
         """
-        if self.__xbee_device.get_protocol() == XBeeProtocol.RAW_802_15_4:
-            if options == XBeeNetwork.DSCVRY_OPTS_APPEND_DD:
-                raise OperationNotSupportedException("Append DD is not supported by 802.15.4 protocol.")
-            elif options == XBeeNetwork.DSCVRY_OPTS_SELF_RESPONSE:
-                options = 1
+        if options is None:
+            raise ValueError("Options cannot be None")
 
-        if (options & 0x04) == 0x04:
-            if (self.__xbee_device.get_protocol() != XBeeProtocol.DIGI_MESH and
-               self.__xbee_device.get_protocol() != XBeeProtocol.DIGI_POINT):
-                raise OperationNotSupportedException("Bit 2 enabled (Append rssi) -> Only valid for DigiMesh and "
-                                                     "DigiPoint protocols.")
-
-        self.__xbee_device.set_parameter("NO", bytearray([options]))
+        value = DiscoveryOptions.calculate_discovery_value(self.__xbee_device.get_protocol(), options)
+        self.__xbee_device.set_parameter("NO", utils.int_to_bytes(value))
 
     def get_discovery_timeout(self):
         """
         Returns the network discovery timeout.
-        
+
         Returns:
             Float: the network discovery timeout.
 
@@ -5199,10 +5306,10 @@ class XBeeNetwork(object):
     def set_discovery_timeout(self, discovery_timeout):
         """
         Sets the discovery network timeout.
-        
+
         Args:
             discovery_timeout (Float): timeout in seconds.
-        
+
         | Raises:
         |     TimeoutException: if the response is not received before the read timeout expires.
         |     XBeeException: if the XBee device's serial port is closed.
@@ -5217,47 +5324,97 @@ class XBeeNetwork(object):
         timeout = bytearray([int(discovery_timeout)])
         self.__xbee_device.set_parameter("NT", timeout)
 
-    def get_device(self, x64bit_addr=None, x16bit_addr=None, node_id=None):
+    def get_device_by_64(self, x64bit_addr):
         """
-        Searches in the current network for a XBee device with the given parameters and returns it.
-        
+        Returns the remote device already contained in the network whose 64-bit
+        address matches the given one.
+
         Args:
-            x64bit_addr (:class:`XBee64BitAddress`, optional): XBee device's 64bit address. Optional.
-            x16bit_addr (:class:`XBee16BitAddress`, optional): XBee device's 16bit address. Optional.
-            node_id (Bytearray, optional): the node identifier of the XBee device. Optional.
-            
-        NOTE: if all given parameters are ``None``, this method will raise a ``ValueError``.
-        
+            x64bit_addr (:class:`XBee64BitAddress`): The 64-bit address of the device to be retrieved.
+
         Returns:
-            :class:`.RemoteXBeeDevice`: the remote XBee device if it could be found, ``None`` otherwise.
-        
+            :class:`.RemoteXBeeDevice`: the remote XBee device in the network or ``None`` if it is not found.
+
         | Raises:
-        |     ValueError:
-        |         1. If all given parameters are ``None``.
-        |         2. If there is not any XBee device with the given parameters in the network.
+        |     ValueError: if ``x64bit_addr`` is ``None`` or unknown.
         """
-        if x64bit_addr is None and x16bit_addr is None and node_id is None:
-            raise ValueError("x64bit_addr or x16bit_addr must be different than None.")
-        remote = RemoteXBeeDevice(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
+        if x64bit_addr is None:
+            raise ValueError("64-bit address cannot be None")
+        if x64bit_addr == XBee64BitAddress.UNKNOWN_ADDRESS:
+            raise ValueError("64-bit address cannot be unknown")
 
         with self.__lock:
-            for local_xbee in self.__devices_list:
-                if local_xbee == remote:
-                    return local_xbee
+            for device in self.__devices_list:
+                if device.get_64bit_addr() is not None and device.get_64bit_addr().address == x64bit_addr.address:
+                    return device
 
-        raise ValueError("There is not any device with the provided parameters in the network.")
+        return None
+
+    def get_device_by_16(self, x16bit_addr):
+        """
+        Returns the remote device already contained in the network whose 16-bit
+        address matches the given one.
+
+        Args:
+            x16bit_addr (:class:`XBee16BitAddress`): The 16-bit address of the device to be retrieved.
+
+        Returns:
+            :class:`.RemoteXBeeDevice`: the remote XBee device in the network or ``None`` if it is not found.
+
+        | Raises:
+        |     ValueError: if ``x16bit_addr`` is ``None`` or unknown.
+        """
+        if self.__xbee_device.get_protocol() == XBeeProtocol.DIGI_MESH:
+            raise ValueError("DigiMesh protocol does not support 16-bit addressing")
+        if self.__xbee_device.get_protocol() == XBeeProtocol.DIGI_POINT:
+            raise ValueError("Point-to-Multipoint protocol does not support 16-bit addressing")
+        if x16bit_addr is None:
+            raise ValueError("16-bit address cannot be None")
+        if x16bit_addr == XBee16BitAddress.UNKNOWN_ADDRESS:
+            raise ValueError("16-bit address cannot be unknown")
+
+        with self.__lock:
+            for device in self.__devices_list:
+                if device.get_16bit_addr() is not None and device.get_16bit_addr().address == x16bit_addr.address:
+                    return device
+
+        return None
+
+    def get_device_by_node_id(self, node_id):
+        """
+        Returns the remote device already contained in the network whose node identifier
+        matches the given one.
+
+        Args:
+            node_id (String): The node identifier of the device to be retrieved.
+
+        Returns:
+            :class:`.RemoteXBeeDevice`: the remote XBee device in the network or ``None`` if it is not found.
+
+        | Raises:
+        |     ValueError: if ``node_id`` is ``None``.
+        """
+        if node_id is None:
+            raise ValueError("Node ID cannot be None")
+
+        with self.__lock:
+            for device in self.__devices_list:
+                if device.get_node_id() is not None and device.get_node_id() == node_id:
+                    return device
+
+        return None
 
     def add_if_not_exist(self, x64bit_addr=None, x16bit_addr=None, node_id=None):
         """
         Adds an XBee device with the provided parameters if it does not exist in the current network.
-        
+
         If the XBee device already exists, its data will be updated with the provided parameters that are not ``None``.
-        
+
         Args:
             x64bit_addr (:class:`XBee64BitAddress`, optional): XBee device's 64bit address. Optional.
             x16bit_addr (:class:`XBee16BitAddress`, optional): XBee device's 16bit address. Optional.
-            node_id (Bytearray, optional): the node identifier of the XBee device. Optional.
-            
+            node_id (String, optional): the node identifier of the XBee device. Optional.
+
         | Returns:
         |     :class:`.RemoteXBeeDevice`: the remote XBee device with the updated parameters. If the XBee device
                                           was not in the list yet, this method returns the given XBee device
@@ -5269,13 +5426,13 @@ class XBeeNetwork(object):
     def add_remote(self, remote_xbee_device):
         """
         Adds the provided remote XBee device to the network if it is not contained yet.
-        
+
         If the XBee device is already contained in the network, its data will be updated with the parameters of
         the XBee device that are not ``None``.
-        
+
         Args:
             remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to add to the network.
-        
+
         | Returns:
         |     :class:`.RemoteXBeeDevice`: the provided XBee device with the updated parameters. If the XBee device
                                           was not in the list yet, this method returns it without changes.
@@ -5291,10 +5448,10 @@ class XBeeNetwork(object):
     def add_remotes(self, remote_xbee_devices):
         """
         Adds a list of remote XBee devices to the network.
-        
+
         If any XBee device of the list is already contained in the network, its data will be updated with the
         parameters of the XBee device that are not ``None``.
-        
+
         Args:
             remote_xbee_devices (List): the list of :class:`.RemoteXBeeDevice` to add to the network.
         """
@@ -5304,10 +5461,10 @@ class XBeeNetwork(object):
     def remove_device(self, remote_xbee_device):
         """
         Removes the provided remote XBee device from the network.
-        
+
         Args:
             remote_xbee_device (:class:`.RemoteXBeeDevice`): the remote XBee device to be removed from the list.
-            
+
         Raises:
             ValueError: if the provided :class:`.RemoteXBeeDevice` is not in the network.
         """
@@ -5316,7 +5473,7 @@ class XBeeNetwork(object):
     def get_discovery_callbacks(self):
         """
         Returns the API callbacks that are used in the device discovery process.
-        
+
         This callbacks notify the user callbacks for each XBee device discovered.
 
         | Returns:
@@ -5368,7 +5525,7 @@ class XBeeNetwork(object):
                 # if it is not a finish signal, it contains info about a remote XBee device.
                 remote = self.__create_remote(xbee_packet.command_value)
                 # if it's the sought XBee device, put it in the proper variable.
-                if self.__sought_device_id == remote.get_node_id().decode():
+                if self.__sought_device_id == remote.get_node_id():
                     with self.__lock:
                         self.__discovered_device = remote
                         self.__sought_device_id = None
@@ -5378,29 +5535,21 @@ class XBeeNetwork(object):
     def _get_discovery_thread(self):
         """
         Returns the network discovery thread.
-        
+
         Used to determine whether the discovery thread is alive or not.
-        
+
         | Returns:
         |     :class:`.Thread`: the network discovery thread.
         """
         return self.__discovery_thread
 
-    def stop_discovering(self):
-        """
-        Stops the discovery thread.
-        """
-        if self.__discovering:
-            with self.__lock:
-                self.__discovering = False
-
     @staticmethod
     def __update_device(xbee_device_1, xbee_device_2):
         """
         Updates the information of a remote XBee device with the values of other remote XBee device.
-        
+
         The values are only updated if they are not ``None`` in the remote device used to get the information from.
-        
+
         Args:
             xbee_device_1 (:class:`.RemoteXBeeDevice`): the remote XBee device to be updated
             xbee_device_2 (:class:`.RemoteXBeeDevice`): the remote XBee device to take information from.
@@ -5417,7 +5566,7 @@ class XBeeNetwork(object):
         """
         Checks if the provided XBee packet is an ND response or not. If so, checks if is the 'end' signal
         of the discovery process or if it has information about a remote XBee device.
-        
+
         | Returns:
         |     Integer: the ID that indicates if the packet is a finish discovery signal or if it contains information
                        about a remote XBee device, or ``None`` if the ``xbee_packet`` is not a response for an ``ND``
@@ -5441,20 +5590,20 @@ class XBeeNetwork(object):
         and notifies callbacks.
         """
         self.__discover_devices()
-        self.__device_discovery_finished(XBeeNetwork.ERR_DISCOVERY_FINISHED_OK)
+        self.__device_discovery_finished(NetworkDiscoveryStatus.SUCCESS)
 
-    def __discover_devices(self, device_id=None):
+    def __discover_devices(self, node_id=None):
         """
         Blocking method. Performs a device discovery in the network and waits until it finish (timeout or 'end'
         packet for 802.15.4)
 
         Args:
-            device_id (String, optional): node identifier of the remote XBee device to discover. Optional.
+            node_id (String, optional): node identifier of the remote XBee device to discover. Optional.
         """
         try:
             init_time = time.clock()
 
-            # In 802.15.4 devices, the discovery finishes when the 'end' command 
+            # In 802.15.4 devices, the discovery finishes when the 'end' command
             # is received, so it's not necessary to calculate the timeout.
             # This also applies to S1B devices working in compatibility mode.
             is_802_compatible = self.__is_802_compatible()
@@ -5464,7 +5613,7 @@ class XBeeNetwork(object):
             # send "ND" async
             self.__xbee_device.send_packet(ATCommPacket(self.__xbee_device.get_next_frame_id(),
                                                         "ND",
-                                                        None if device_id is None else bytearray(device_id, 'utf8')),
+                                                        None if node_id is None else bytearray(node_id, 'utf8')),
                                            False)
 
             if not is_802_compatible:
@@ -5491,13 +5640,13 @@ class XBeeNetwork(object):
 
     def __is_802_compatible(self):
         """
-        Checks if the device performing the node discovery is a legacy 
+        Checks if the device performing the node discovery is a legacy
         802.15.4 device or a S1B device working in compatibility mode.
-        
+
         | Returns:
         |     Boolean: ``True`` if the device performing the node discovery is a legacy
                         802.15.4 device or S1B in compatibility mode, ``False`` otherwise.
-        
+
         """
         if self.__xbee_device.get_protocol() != XBeeProtocol.RAW_802_15_4:
             return False
@@ -5513,13 +5662,13 @@ class XBeeNetwork(object):
     def __calculate_timeout(self):
         """
         Determines the discovery timeout.
-        
+
         Gets timeout information from the device and applies the proper
         corrections to it.
-        
+
         If the timeout cannot be determined getting it from the device, this
         method returns the default timeout for discovery operations.
-        
+
         Returns:
             Float: discovery timeout in seconds.
         """
@@ -5537,7 +5686,7 @@ class XBeeNetwork(object):
             except XBeeException as xe:
                 discovery_timeout = XBeeNetwork.__DEFAULT_DISCOVERY_TIMEOUT
                 self.__xbee_device.log.exception(xe)
-                self.__device_discovery_finished(XBeeNetwork.ERR_READ_TIMEOUT)
+                self.__device_discovery_finished(NetworkDiscoveryStatus.ERROR_READ_TIMEOUT)
 
             # In DigiMesh/DigiPoint the network discovery timeout is NT + the
             # network propagation time. It means that if the user sends an AT
@@ -5554,7 +5703,6 @@ class XBeeNetwork(object):
                     discovery_timeout += discovery_timeout + \
                                         (discovery_timeout * XBeeNetwork.__DIGI_MESH_SLEEP_TIMEOUT_CORRECTION)
             except XBeeException as xe:
-                self.__device_discovery_finished(XBeeNetwork.ERR_DETERMINE_SLEEP_SUPPORT)
                 self.__xbee_device.log.exception(xe)
 
         return discovery_timeout
@@ -5564,12 +5712,12 @@ class XBeeNetwork(object):
         Creates and returns a :class:`.RemoteXBeeDevice` from the provided data,
         if the data contains the required information and in the required
         format.
-        
+
         | Returns:
         |     :class:`.RemoteXBeeDevice`: the remote XBee device generated from the provided data if the data
                                           provided is correct and the XBee device's protocol is valid,
                                           ``None`` otherwise.
-        
+
         | See:
         |     :meth:`.XBeeNetwork.__get_data_for_remote`
         """
@@ -5581,9 +5729,9 @@ class XBeeNetwork(object):
         if p == XBeeProtocol.ZIGBEE:
             return RemoteZigBeeDevice(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
         elif p == XBeeProtocol.DIGI_MESH:
-            return RemoteDigiMeshDevice(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
+            return RemoteDigiMeshDevice(self.__xbee_device, x64bit_addr, node_id)
         elif p == XBeeProtocol.DIGI_POINT:
-            return RemoteDigiPointDevice(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
+            return RemoteDigiPointDevice(self.__xbee_device, x64bit_addr, node_id)
         elif p == XBeeProtocol.RAW_802_15_4:
             return RemoteRaw802Device(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
         else:
@@ -5594,10 +5742,10 @@ class XBeeNetwork(object):
         Extracts the :class:`.XBee16BitAddress` (bytes 0 and 1), the
         :class:`.XBee64BitAddress` (bytes 2 to 9) and the node identifier
         from the provided data.
-        
+
         Args:
             data (Bytarray): the data to extract information from.
-        
+
         | Returns:
         |     Tuple (:class:`.XBee16BitAddress`, :class:`.XBee64BitAddress`, Bytearray): remote device information
         """
@@ -5616,4 +5764,88 @@ class XBeeNetwork(object):
             while data[i] != 0x00:
                 i += 1
             node_id = data[10:i]
-        return XBee16BitAddress(data[0:2]), XBee64BitAddress(data[2:10]), node_id
+        return XBee16BitAddress(data[0:2]), XBee64BitAddress(data[2:10]), node_id.decode()
+
+
+class ZigBeeNetwork(XBeeNetwork):
+    """
+    This class represents a ZigBee network.
+
+    The network allows the discovery of remote devices in the same network
+    as the local one and stores them.
+    """
+
+    def __init__(self, device):
+        """
+        Class constructor. Instantiates a new ``ZigBeeNetwork``.
+
+        Args:
+            device (:class:`.ZigBeeDevice`): the local ZigBee device to get the network from.
+
+        | Raises:
+        |     ValueError: if ``device`` is ``None``.
+        """
+        super().__init__(device)
+
+
+class Raw802Network(XBeeNetwork):
+    """
+    This class represents an 802.15.4 network.
+
+    The network allows the discovery of remote devices in the same network
+    as the local one and stores them.
+    """
+
+    def __init__(self, device):
+        """
+        Class constructor. Instantiates a new ``Raw802Network``.
+
+        Args:
+            device (:class:`.Raw802Device`): the local 802.15.4 device to get the network from.
+
+        | Raises:
+        |     ValueError: if ``device`` is ``None``.
+        """
+        super().__init__(device)
+
+
+class DigiMeshNetwork(XBeeNetwork):
+    """
+    This class represents a DigiMesh network.
+
+    The network allows the discovery of remote devices in the same network
+    as the local one and stores them.
+    """
+
+    def __init__(self, device):
+        """
+        Class constructor. Instantiates a new ``DigiMeshNetwork``.
+
+        Args:
+            device (:class:`.DigiMeshDevice`): the local DigiMesh device to get the network from.
+
+        | Raises:
+        |     ValueError: if ``device`` is ``None``.
+        """
+        super().__init__(device)
+
+
+class DigiPointNetwork(XBeeNetwork):
+    """
+    This class represents a DigiPoint network.
+
+    The network allows the discovery of remote devices in the same network
+    as the local one and stores them.
+    """
+
+    def __init__(self, device):
+        """
+        Class constructor. Instantiates a new ``DigiPointNetwork``.
+
+        Args:
+            device (:class:`.DigiPointDevice`): the local DigiPoint device to get the network from.
+
+        | Raises:
+        |     ValueError: if ``device`` is ``None``.
+        """
+        super().__init__(device)

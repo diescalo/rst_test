@@ -1,22 +1,8 @@
-# Copyright 2017 Digi International Inc., All Rights Reserved
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# This software contains proprietary and confidential information of Digi
-# International Inc.  By accepting transfer of this copy, Recipient agrees
-# to retain this software in confidence, to prevent disclosure to others,
-# and to make no use of this software other than that for which it was
-# delivered.  This is an unpublished copyrighted work of Digi International
-# Inc.  Except as permitted by federal law, 17 USC 117, copying is strictly
-# prohibited.
-#
-# Restricted Rights Legend
-#
-# Use, duplication, or disclosure by the Government is subject to
-# restrictions set forth in sub-paragraph (c)(1)(ii) of The Rights in
-# Technical Data and Computer Software clause at DFARS 252.227-7031 or
-# subparagraphs (c)(1) and (2) of the Commercial Computer Software -
-# Restricted Rights at 48 CFR 52.227-19, as applicable.
-#
-# Digi International Inc., 11001 Bren Road East, Minnetonka, MN 55343
+# Copyright (c) 2017 Digi International Inc. All Rights Reserved.
 
 from enum import Enum, unique
 from src.util import utils
@@ -375,6 +361,94 @@ PowerLevel.__doc__ += utils.doc_enum(PowerLevel)
 
 
 @unique
+class AssociationIndicationStatus(Enum):
+    """
+    Enumerates the different association indication statuses.
+    """
+    SUCCESSFULLY_JOINED = (0x00, "Successfully formed or joined a network.")
+    AS_TIMEOUT = (0x01, "Active Scan Timeout.")
+    AS_NO_PANS_FOUND = (0x02, "Active Scan found no PANs.")
+    AS_ASSOCIATION_NOT_ALLOWED = (0x03, "Active Scan found PAN, but the CoordinatorAllowAssociation bit is not set.")
+    AS_BEACONS_NOT_SUPPORTED = (0x04, "Active Scan found PAN, but Coordinator and End Device are not configured to support beacons.")
+    AS_ID_DOESNT_MATCH = (0x05, "Active Scan found PAN, but the Coordinator ID parameter does not match the ID parameter of the End Device.")
+    AS_CHANNEL_DOESNT_MATCH = (0x06, "Active Scan found PAN, but the Coordinator CH parameter does not match the CH parameter of the End Device.")
+    ENERGY_SCAN_TIMEOUT = (0x07, "Energy Scan Timeout.")
+    COORDINATOR_START_REQUEST_FAILED = (0x08, "Coordinator start request failed.")
+    COORDINATOR_INVALID_PARAMETER = (0x09, "Coordinator could not start due to invalid parameter.")
+    COORDINATOR_REALIGNMENT = (0x0A, "Coordinator Realignment is in progress.")
+    AR_NOT_SENT = (0x0B, "Association Request not sent.")
+    AR_TIMED_OUT = (0x0C, "Association Request timed out - no reply was received.")
+    AR_INVALID_PARAMETER = (0x0D, "Association Request had an Invalid Parameter.")
+    AR_CHANNEL_ACCESS_FAILURE = (0x0E, "Association Request Channel Access Failure. Request was not transmitted - CCA failure.")
+    AR_COORDINATOR_ACK_WASNT_RECEIVED = (0x0F, "Remote Coordinator did not send an ACK after Association Request was sent.")
+    AR_COORDINATOR_DIDNT_REPLY = (0x10, "Remote Coordinator did not reply to the Association Request, but an ACK was received after sending the request.")
+    SYNCHRONIZATION_LOST = (0x12, "Sync-Loss - Lost synchronization with a Beaconing Coordinator.")
+    DISASSOCIATED = (0x13, " Disassociated - No longer associated to Coordinator.")
+    NO_PANS_FOUND = (0x21, "Scan found no PANs.")
+    NO_PANS_WITH_ID_FOUND = (0x22, "Scan found no valid PANs based on current SC and ID settings.")
+    NJ_EXPIRED = (0x23, "Valid Coordinator or Routers found, but they are not allowing joining (NJ expired).")
+    NO_JOINABLE_BEACONS_FOUND = (0x24, "No joinable beacons were found.")
+    UNEXPECTED_STATE = (0x25, "Unexpected state, node should not be attempting to join at this time.")
+    JOIN_FAILED = (0x27, "Node Joining attempt failed (typically due to incompatible security settings).")
+    COORDINATOR_START_FAILED = (0x2A, "Coordinator Start attempt failed.")
+    CHECKING_FOR_COORDINATOR = (0x2B, "Checking for an existing coordinator.")
+    NETWORK_LEAVE_FAILED = (0x2C, "Attempt to leave the network failed.")
+    DEVICE_DIDNT_RESPOND = (0xAB, "Attempted to join a device that did not respond.")
+    UNSECURED_KEY_RECEIVED = (0xAC, "Secure join error - network security key received unsecured.")
+    KEY_NOT_RECEIVED = (0xAD, "Secure join error - network security key not received.")
+    INVALID_SECURITY_KEY = (0xAF, "Secure join error - joining device does not have the right preconfigured link key.")
+    SCANNING_NETWORK = (0xFF, "Scanning for a network/Attempting to associate.")
+
+    def __init__(self, code, description):
+        self.__code = code
+        self.__description = description
+
+    def __get_code(self):
+        """
+        Returns the code of the ``AssociationIndicationStatus`` element.
+
+        Returns:
+            Integer: the code of the ``AssociationIndicationStatus`` element.
+        """
+        return self.__code
+
+    def __get_description(self):
+        """
+        Returns the description of the ``AssociationIndicationStatus`` element.
+
+        Returns:
+            String: the description of the ``AssociationIndicationStatus`` element.
+        """
+        return self.__description
+
+    @classmethod
+    def get(cls, code):
+        """
+        Returns the ``AssociationIndicationStatus`` for the given code.
+
+        Args:
+            code (Integer): the code of the ``AssociationIndicationStatus`` to get.
+
+        | Returns:
+        |     :class:`.AssociationIndicationStatus`: the ``AssociationIndicationStatus``
+                                                     with the given code.
+        """
+        try:
+            return cls.lookupTable[code]
+        except KeyError:
+            return None
+
+    code = property(__get_code)
+    """Integer. The association indication status code."""
+
+    description = property(__get_description)
+    """String. The association indication status description."""
+
+AssociationIndicationStatus.lookupTable = {x.code: x for x in AssociationIndicationStatus}
+AssociationIndicationStatus.__doc__ += utils.doc_enum(AssociationIndicationStatus)
+
+
+@unique
 class CellularAssociationIndicationStatus(Enum):
     """
     Enumerates the different association indication statuses for the Cellular
@@ -392,33 +466,33 @@ class CellularAssociationIndicationStatus(Enum):
 
     def __get_code(self):
         """
-        Returns the code of the ``CellularAssociationIndication`` element.
+        Returns the code of the ``CellularAssociationIndicationStatus`` element.
 
         Returns:
-            Integer: the code of the ``CellularAssociationIndication`` element.
+            Integer: the code of the ``CellularAssociationIndicationStatus`` element.
         """
         return self.__code
 
     def __get_description(self):
         """
-        Returns the description of the ``CellularAssociationIndication`` element.
+        Returns the description of the ``CellularAssociationIndicationStatus`` element.
 
         Returns:
-            String: the description of the ``CellularAssociationIndication`` element.
+            String: the description of the ``CellularAssociationIndicationStatus`` element.
         """
         return self.__description
 
     @classmethod
     def get(cls, code):
         """
-        Returns the ``CellularAssociationIndication`` for the given code.
+        Returns the ``CellularAssociationIndicationStatus`` for the given code.
 
         Args:
-            code (Integer): the code of the ``CellularAssociationIndication`` to get.
+            code (Integer): the code of the ``CellularAssociationIndicationStatus`` to get.
 
         | Returns:
-        |     :class:`.CellularAssociationIndication`: the ``CellularAssociationIndication``
-                                                       with the given code.
+        |     :class:`.CellularAssociationIndicationStatus`: the ``CellularAssociationIndicationStatus``
+                                                             with the given code.
         """
         try:
             return cls.lookupTable[code]
@@ -624,3 +698,60 @@ class WiFiAssociationIndicationStatus(Enum):
 
 WiFiAssociationIndicationStatus.lookupTable = {x.code: x for x in WiFiAssociationIndicationStatus}
 WiFiAssociationIndicationStatus.__doc__ += utils.doc_enum(WiFiAssociationIndicationStatus)
+
+
+@unique
+class NetworkDiscoveryStatus(Enum):
+    """
+    Enumerates the different statuses of the network discovery process.
+    """
+    SUCCESS = (0x00, "Success")
+    ERROR_READ_TIMEOUT = (0x01, "Read timeout error")
+
+    def __init__(self, code, description):
+        self.__code = code
+        self.__description = description
+
+    def __get_code(self):
+        """
+        Returns the code of the ``NetworkDiscoveryStatus`` element.
+
+        Returns:
+            Integer: the code of the ``NetworkDiscoveryStatus`` element.
+        """
+        return self.__code
+
+    def __get_description(self):
+        """
+        Returns the description of the ``NetworkDiscoveryStatus`` element.
+
+        Returns:
+            String: the description of the ``NetworkDiscoveryStatus`` element.
+        """
+        return self.__description
+
+    @classmethod
+    def get(cls, code):
+        """
+        Returns the network discovery status for the given code.
+
+        Args:
+            code (Integer): the code of the network discovery status to get.
+
+        | Returns:
+        |     :class:`.NetworkDiscoveryStatus`: the ``NetworkDiscoveryStatus`` with the given code, ``None`` if
+                                                there is not any status with the provided code.
+        """
+        try:
+            return cls.lookupTable[code]
+        except KeyError:
+            return None
+
+    code = property(__get_code)
+    """Integer. The network discovery status code."""
+
+    description = property(__get_description)
+    """String. The network discovery status description."""
+
+NetworkDiscoveryStatus.lookupTable = {x.code: x for x in NetworkDiscoveryStatus}
+NetworkDiscoveryStatus.__doc__ += utils.doc_enum(NetworkDiscoveryStatus)
