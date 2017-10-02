@@ -65,17 +65,17 @@ class AbstractXBeeDevice(object):
         """
         Class constructor. Instantiates a new :class:`.AbstractXBeeDevice` object with the provided parameters.
 
-        Kwargs:
-        |     local_xbee_device (:class:`.XBeeDevice`, optional): only necessary if XBee device is remote. The local
+        Args:
+            local_xbee_device (:class:`.XBeeDevice`, optional): only necessary if XBee device is remote. The local
                 XBee device that will behave as connection interface to communicate with the remote XBee one.
-        |     serial_port (:class:`.XBeeSerialPort`, optional): only necessary if the XBee device is local. The serial
+            serial_port (:class:`.XBeeSerialPort`, optional): only necessary if the XBee device is local. The serial
                 port that will be used to communicate with this XBee.
-        |     sync_ops_timeout (Integer, default=:attr:`.AbstractXBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`): the
+            sync_ops_timeout (Integer, default=:attr:`.AbstractXBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`): the
                 timeout (in seconds) that will be applied for all synchronous operations.
 
-        See:
-        |     :class:`.XBeeDevice`
-        |     :class:`.XBeeSerialPort`
+        .. seealso::
+           | :class:`.XBeeDevice`
+           | :class:`.XBeeSerialPort`
         """
         self.__current_frame_id = 0x00
 
