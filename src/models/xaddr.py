@@ -117,10 +117,9 @@ class XBee16BitAddress(object):
             hsb (Integer): high significant byte of the address.
             lsb (Integer): low significant byte of the address.
 
-        | Raises:
-        |     ValueError:
-        |         1. If ``lsb`` is less than 0 or greater than 255.
-        |         2. If ``hsb`` is less than 0 or greater than 255.
+        Raises:
+            ValueError: If ``lsb`` is less than 0 or greater than 255.
+            ValueError: If ``hsb`` is less than 0 or greater than 255.
         """
         if hsb > 255 or hsb < 0:
             raise ValueError("HSB must be between 0 and 255.")
