@@ -15,6 +15,11 @@
 import sys
 import os
 
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__":
+        return False
+    return skip
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -33,6 +38,10 @@ extensions = [
     'sphinx.ext.viewcode',
 ]
 
+# This value contains a list of modules to be mocked up. This is useful
+# when some external dependencies are not met at build time and break the
+# building process. You may only specify the root package of the dependencies
+# themselves and ommit the sub-modules: 
 autodoc_mock_imports = [
     'serial',
     'serial.serialutil'
@@ -139,9 +148,6 @@ html_theme = 'default'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-def setup(app):
-   app.add_stylesheet("theme_overrides.css")
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -286,3 +292,7 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+def setup(app):
+   app.connect("autodoc-skip-member", skip)
+   app.add_stylesheet("theme_overrides.css")
