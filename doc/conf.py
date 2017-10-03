@@ -14,7 +14,10 @@
 
 import sys
 import os
+import sphinx_rtd_theme
 
+# Extend the 'autodoc-skip-member' rule to auto-document the class
+# constructors ('__init__')
 def skip(app, what, name, obj, skip, options):
     if name == "__init__":
         return False
@@ -42,7 +45,7 @@ extensions = [
 # This value contains a list of modules to be mocked up. This is useful
 # when some external dependencies are not met at build time and break the
 # building process. You may only specify the root package of the dependencies
-# themselves and ommit the sub-modules: 
+# themselves and ommit the sub-modules:
 autodoc_mock_imports = [
     'serial',
     'serial.serialutil'
@@ -119,7 +122,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -295,5 +298,5 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 def setup(app):
-   app.connect("autodoc-skip-member", skip)
    app.add_stylesheet("theme_overrides.css")
+   app.connect("autodoc-skip-member", skip)

@@ -77,13 +77,13 @@ methods apart from the one provided by the ``XBeeDevice`` object:
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Instantiate a remote XBee device object.
   remote_device = RemoteXBeeDevice(device, XBee64BitAddress.from_hex_string("0013A20040XXXXXX"))
 
   # Send data using the remote object.
-  device.send_data(remote_device, bytearray(b'Hello XBee!'))
+  device.send_data(remote_device, "Hello XBee!".encode("utf8"))
 
   [...]
 
@@ -173,13 +173,13 @@ methods in addition to the one provided by the XBeeDevice object:
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Instantiate a remote XBee device object.
   remote_device = RemoteXBeeDevice(device, XBee64BitAddress.from_hex_string("0013A20040XXXXXX"))
 
   # Send data using the remote object.
-  device.send_data_async(remote_device, bytearray(b'Hello XBee!'))
+  device.send_data_async(remote_device, "Hello XBee!".encode("utf8"))
 
   [...]
 
@@ -225,10 +225,10 @@ method to send broadcast data:
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Send broadcast data.
-  device.send_data_broadcast(bytearray(b'Hello XBees!'))
+  device.send_data_broadcast("Hello XBees!".encode("utf8"))
 
   [...]
 
@@ -327,13 +327,13 @@ synchronously:
 
   # Instantiate a ZigBee device object.
   device = ZigBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Instantiate a remote ZigBee device object.
   remote_device = RemoteZigBeeDevice(device, XBee64BitAddress.from_hex_string("0013A20040XXXXXX"))
 
   # Send explicit data using the remote object.
-  device.send_expl_data(remote_device, 0xA0, 0xA1, 0x1554, 0xC105, bytearray(b'Hello XBee!'))
+  device.send_expl_data(remote_device, 0xA0, 0xA1, 0x1554, 0xC105, "Hello XBee!".encode("utf8"))
 
   [...]
 
@@ -400,13 +400,13 @@ at least one additional method to transmit unicast explicit data asynchronously:
 
   # Instantiate a ZigBee device object.
   device = ZigBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Instantiate a remote ZigBee device object.
   remote_device = RemoteZigBeeDevice(device, XBee64BitAddress.from_hex_string("0013A20040XXXXXX"))
 
   # Send explicit data asynchronously using the remote object.
-  device.send_expl_data_async(remote_device, 0xA0, 0xA1, 0x1554, 0xC105, bytearray(b'Hello XBee!'))
+  device.send_expl_data_async(remote_device, 0xA0, 0xA1, 0x1554, 0xC105, "Hello XBee!".encode("utf8"))
 
   [...]
 
@@ -452,10 +452,10 @@ explicit data provide the same method to send broadcast explicit data:
 
   # Instantiate a ZigBee device object.
   device = ZigBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Send broadcast data.
-  device.send_expl_data_broadcast(0xA0, 0xA1, 0x1554, 0xC105, bytearray(b'Hello XBees!'))
+  device.send_expl_data_broadcast(0xA0, 0xA1, 0x1554, 0xC105, "Hello XBees!".encode("utf8"))
 
   [...]
 
@@ -530,7 +530,7 @@ several methods to transmit IP data synchronously:
 
   # Instantiate a Cellular device object.
   xbee = CellularDevice("COM1", 9600)
-  xbee.init()
+  xbee.open()
 
   # Send IP data using TCP.
   dest_addr = IPv4Address("56.23.102.96")
@@ -605,7 +605,7 @@ several methods to transmit IP data asynchronously:
 
   # Instantiate a Cellular device object.
   xbee = CellularDevice("COM1", 9600)
-  xbee.init()
+  xbee.open()
 
   # Send IP data using TCP.
   dest_addr = IPv4Address("56.23.102.96")
@@ -671,7 +671,7 @@ synchronously:
 
   # Instantiate a Cellular device object.
   xbee = CellularDevice("COM1", 9600)
-  xbee.init()
+  xbee.open()
 
   phone_number = "+34665963205"
   data = "Hello XBee!"
@@ -725,7 +725,7 @@ asynchronously:
 
   # Instantiate a Cellular device object.
   xbee = CellularDevice("COM1", 9600)
-  xbee.init()
+  xbee.open()
 
   phone_number = "+34665963205"
   data = "Hello XBee!"
@@ -762,7 +762,7 @@ There are two different ways to read data from the device:
   information.
 
 
-.. _comunicateReceiveDataPolling:
+.. _communicateReceiveDataPolling:
 
 Polling for data
 ````````````````
@@ -771,11 +771,11 @@ The simplest way to read for data is by executing the ``read_data`` method of
 the local XBee device. This method blocks your application until data from any
 XBee device of the network is received or the timeout provided has expired:
 
-+---------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                          | Description                                                                                                                                                                                                                                                     |
-+=================================+=================================================================================================================================================================================================================================================================+
-| **read_data(Integer, Boolean)** | Specifies the time to wait for data reception (method blocks during that time or until data is received) and whether the data is explicit or not. If you do not specify a timeout the method uses the default receive timeout configured in the **XBeeDevice**. |
-+---------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                 | Description                                                                                                                                                                                                                                                                   |
++========================+===============================================================================================================================================================================================================================================================================+
+| **read_data(Integer)** | Specifies the time to wait for data reception (method blocks during that time and throws a ``TimeoutException`` if no data is received). If you do not specify a timeout, the method returns immediately the read message or ``None`` if the device did not receive new data. |
++------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Reading data from any remote XBee device (polling)**
 
@@ -785,7 +785,7 @@ XBee device of the network is received or the timeout provided has expired:
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Read data.
   xbee_message = device.read_data()
@@ -821,11 +821,11 @@ the ``XBeeMessage`` object:
 You can also read data from a specific remote XBee device of the network. For
 that purpose, the XBee device object provides the ``read_data_from`` method:
 
-+--------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                                                 | Description                                                                                                                                                                                                                                                                                               |
-+========================================================+===========================================================================================================================================================================================================================================================================================================+
-| **read_data_from(RemoteXBeeDevice, Integer, Boolean)** | Specifies the remote XBee device to read data from, the time to wait for data reception (method blocks during that time or until data is received) and whether the data is explicit or not. If you do not specify a timeout the method uses the default receive timeout configured in the **XBeeDevice**. |
-+--------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                                        | Description                                                                                                                                                                                                                                                                                                                |
++===============================================+============================================================================================================================================================================================================================================================================================================================+
+| **read_data_from(RemoteXBeeDevice, Integer)** | Specifies the remote XBee device to read data from and the time to wait for data reception (method blocks during that time and throws a ``TimeoutException`` if no data is received). If you do not specify a timeout, the method returns immediately the read message or ``None`` if the device did not receive new data. |
++-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Read data from a specific remote XBee device (polling)**
 
@@ -835,7 +835,7 @@ that purpose, the XBee device object provides the ``read_data_from`` method:
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Instantiate a remote XBee device object.
   remote_device = RemoteXBeeDevice(device, XBee64BitAddress.from_hex_string("0013A200XXXXXX"))
@@ -861,7 +861,7 @@ can configure the timeout using the ``get_sync_ops_timeout`` and
 +---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-.. _comunicateReceiveDataCallback:
+.. _communicateReceiveDataCallback:
 
 Data reception callback
 ```````````````````````
@@ -880,7 +880,7 @@ parameter.
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Define callback.
   def my_data_received_callback(xbee_message):
@@ -961,7 +961,7 @@ read it using one of the following mechanisms provided by the XBee device
 object.
 
 
-.. _comunicateReceiveExplicitDataPolling:
+.. _communicateReceiveExplicitDataPolling:
 
 Polling for explicit data
 `````````````````````````
@@ -971,11 +971,11 @@ The simplest way to read for explicit data is by executing the
 application until explicit data from any XBee device of the network is received
 or the provided timeout has expired:
 
-+-----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                      | Description                                                                                                                                                                                                                                      |
-+=============================+==================================================================================================================================================================================================================================================+
-| **read_expl_data(Integer)** | Specifies the time to wait in seconds for explicit data reception (method blocks during that time or until explicit data is received). If you don't specify a timeout, the method uses the default receive timeout configured in **XBeeDevice**. |
-+-----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                      | Description                                                                                                                                                                                                                                                                                       |
++=============================+===================================================================================================================================================================================================================================================================================================+
+| **read_expl_data(Integer)** | Specifies the time to wait in seconds for explicit data reception (method blocks during that time and throws a ``TimeoutException`` if no data is received). If you do not specify a timeout, the method returns immediately the read message or ``None`` if the device did not receive new data. |
++-----------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Read explicit data from any remote XBee device (polling)**
 
@@ -985,7 +985,7 @@ or the provided timeout has expired:
 
   # Instantiate a ZigBee device object.
   device = ZigBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Read data.
   xbee_message = device.read_expl_data()
@@ -1030,11 +1030,11 @@ You can also read explicit data from a specific remote XBee device of the
 network. For that purpose, the XBee device object provides the
 ``read_expl_data_from`` method:
 
-+----------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                                             | Description                                                                                                                                                                                                                                                                                          |
-+====================================================+======================================================================================================================================================================================================================================================================================================+
-| **read_expl_data_from(RemoteXBeeDevice, Integer)** | Specifies the remote XBee device to read explicit data from and the time to wait for explicit data reception (method blocks during that time or until explicit data is received). If you do not specify a timeout, the method uses the default receive timeout configured in the XBee device object. |
-+----------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++----------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                                             | Description                                                                                                                                                                                                                                                                                                                                  |
++====================================================+==============================================================================================================================================================================================================================================================================================================================================+
+| **read_expl_data_from(RemoteXBeeDevice, Integer)** | Specifies the remote XBee device to read explicit data from and the time to wait for explicit data reception (method blocks during that time and throws a ``TimeoutException`` if no data is received). If you do not specify a timeout, the method returns immediately the read message or ``None`` if the device did not receive new data. |
++----------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Read explicit data from a specific remote XBee device (polling)**
 
@@ -1044,7 +1044,7 @@ network. For that purpose, the XBee device object provides the
 
   # Instantiate a ZigBee device object.
   device = ZigBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Instantiate a remote ZigBee device object.
   remote_device = RemoteZigBeeDevice(device, XBee64BitAddress.from_hex_string("0013A200XXXXXX"))
@@ -1070,7 +1070,7 @@ can configure the timeout using the ``get_sync_ops_timeout`` and
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-.. _comunicateReceiveExplicitDataCallback:
+.. _communicateReceiveExplicitDataCallback:
 
 Explicit data reception callback
 ````````````````````````````````
@@ -1088,7 +1088,7 @@ are subscribed or registered to the explicit data reception service by using the
 
   # Instantiate a ZigBee device object.
   device = ZigBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Define callback.
   def my_expl_data_received_callback(expl_xbee_message):
@@ -1166,7 +1166,7 @@ callback.
   mechanism, you also receive the message through both methods.
 
 
-.. _comunicateReceiveIPData:
+.. _communicateReceiveIPData:
 
 Receive IP data
 ---------------
@@ -1210,7 +1210,7 @@ provides a method to listen for incoming transmissions:
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Listen for TCP or UDP transmissions at port 1234.
   device.start_listening(1234);
@@ -1248,7 +1248,7 @@ UDP transmissions:
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Stop listening for TCP or UDP transmissions.
   device.stop_listening()
@@ -1289,7 +1289,7 @@ IP data is received or the provided timeout has expired.
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Read IP data.
   ip_message = device.read_ip_data()
@@ -1315,7 +1315,7 @@ the ``IPMessage`` object:
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Read IP data.
   ip_message = device.read_ip_data()
@@ -1341,7 +1341,7 @@ method:
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Read IP data.
   ip_message = device.read_ip_data_from(IPv4Address("52.36.102.96"))
@@ -1376,7 +1376,7 @@ or registered with the IP data reception service by using the
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
 
   # Define the callback.
@@ -1429,7 +1429,7 @@ listener.
 +----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-.. _comunicateReceiveSMS:
+.. _communicateReceiveSMS:
 
 Receive SMS messages
 --------------------
@@ -1456,7 +1456,7 @@ method.
 
   # Instantiate a Cellular device object.
   device = CellularDevice("COM1", 9600)
-  device.init()
+  device.open()
 
 
   # Define the callback.
@@ -1504,7 +1504,7 @@ unsubscribe the already-registered listener.
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-.. _comunicateReceiveModemStatus:
+.. _communicateReceiveModemStatus:
 
 Receive modem status events
 ---------------------------
@@ -1530,7 +1530,7 @@ service using a modem status listener as parameter with the method
 
   # Instantiate an XBee device object.
   device = XBeeDevice("COM1", 9600)
-  device.init()
+  device.open()
 
   # Define the callback.
   def my_modem_status_callback(status):

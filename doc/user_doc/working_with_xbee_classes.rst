@@ -81,7 +81,7 @@ the following two parameters:
 * Serial port name
 * Serial port baud rate
 
-**Intantiating a local XBee device**
+**Instantiating a local XBee device**
 
 .. code:: python
 
@@ -160,15 +160,15 @@ The local device must also be the same protocol for protocol-specific remote
 XBee devices.
 
 
-Init the XBee device connection
+Open the XBee device connection
 -------------------------------
 
 Before trying to communicate with the local XBee device attached to your PC,
 you need to open its communication interface, which is typically a serial/USB
-port. Use the ``init()`` method of the instantiated XBee device, and you can
+port. Use the ``open()`` method of the instantiated XBee device, and you can
 then communicate and configure the device.
 
-Remote XBee devices do not have an init method. They use a local XBee device
+Remote XBee devices do not have an open method. They use a local XBee device
 as the connection interface. If you want to perform any operation with a remote
 XBee device you must open the connection of the associated local device.
 
@@ -179,12 +179,12 @@ XBee device you must open the connection of the associated local device.
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
 
-  # Init the device connection.
-  local_xbee.init()
+  # Open the device connection.
+  local_xbee.open()
 
   [...]
 
-The ``init()`` method may fail for the following reasons:
+The ``open()`` method may fail for the following reasons:
 
 * All the possible errors are caught as ``XBeeException``:
     * If there is any problem with the communication, throwing a
@@ -194,7 +194,7 @@ The ``init()`` method may fail for the following reasons:
     * There is an error writing to the XBee interface, or device is closed,
       throwing a generic ``XBeeException``.
 
-The ``init()`` action performs some other operations apart from opening the
+The ``open()`` action performs some other operations apart from opening the
 connection interface of the device. It reads the device information (reads
 some sensitive data from it) and determines the operating mode of the device.
 
@@ -215,7 +215,7 @@ parameters at any time, calling their corresponding getters.
 * IMEI (only for Cellular modules)
 
 The read process is performed automatically in local XBee devices when
-opening them with the ``init()`` method. If remote XBee devices cannot be
+opening them with the ``open()`` method. If remote XBee devices cannot be
 opened, you must use ``read_device_info()`` to read their device information.
 
 **Initializing a remote XBee device**
@@ -226,7 +226,7 @@ opened, you must use ``read_device_info()`` to read their device information.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Instantiate a remote XBee device object.
   remote_xbee = RemoteXBeeDevice(local_xbee, XBee64BitAddress.from_hex_string("0013A20040XXXXXX"))
@@ -249,7 +249,7 @@ The ``read_device_info()`` method may fail for the following reasons:
       throwing a generic ``XBeeException``.
 
 .. note::
-  Although the readDeviceInfo method is executed automatically in local XBee
+  Although the ``readDeviceInfo`` method is executed automatically in local XBee
   devices when they are open, you can issue it at any time to refresh the
   information of the device.
 
@@ -261,7 +261,7 @@ The ``read_device_info()`` method may fail for the following reasons:
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Get the 64-bit address of the device.
   addr_64 = device.get_64bit_addr()
@@ -274,12 +274,12 @@ The ``read_device_info()`` method may fail for the following reasons:
 
 The read device information process also determines the communication protocol
 of the local or remote XBee device object. This is typically something you
-need to know beforehand if you are not using the generic `XBeeDevice` object.
+need to know beforehand if you are not using the generic ``XBeeDevice`` object.
 
 However, the API performs this operation to ensure that the class you
 instantiated is the correct one. So, if you instantiated a ZigBee device and
-the ``init()`` process realizes that the physical device is actually a DigiMesh
-device, you receive an `XBeeDeviceException` indicating the device.
+the ``open()`` process realizes that the physical device is actually a DigiMesh
+device, you receive an ``XBeeDeviceException`` indicating the device.
 
 You can retrieve the protocol of the XBee device from the object executing the
 corresponding getter.
@@ -292,16 +292,16 @@ corresponding getter.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Get the protocol of the device.
-  protocol = myXBeeDevice.getXBeeProtocol()
+  protocol = local_xbee.get_protocol()
 
 
 Device operating mode
 `````````````````````
 
-The ``init()`` process also reads the operating mode of the physical local
+The ``open()`` process also reads the operating mode of the physical local
 device and stores it in the object. As with previous settings, you can
 retrieve the operating mode from the object at any time by calling the
 corresponding getter.
@@ -314,12 +314,12 @@ corresponding getter.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Get the operating mode of the device.
   operating_mode = local_xbee.get_operating_mode()
 
-Remote devices do not have an ``init()`` method, so you receive ``UNKNOWN``
+Remote devices do not have an ``open()`` method, so you receive ``UNKNOWN``
 when retrieving the operating mode of a remote XBee device.
 
 The XBee Python Library supports 2 operating modes for local devices:
@@ -328,23 +328,23 @@ The XBee Python Library supports 2 operating modes for local devices:
 * API with escaped characters
 
 This means that AT (transparent) mode is not supported by the API. So, if
-you try to execute the ``init()`` method in a local device working in AT mode,
+you try to execute the ``open()`` method in a local device working in AT mode,
 you get an ``XBeeException`` caused by an ``InvalidOperatingModeException``.
 
 
-Finalize the XBee device connection
------------------------------------
+Close the XBee device connection
+--------------------------------
 
-You must call the ``finalize()`` method all times you finish your XBee
-application. You can use this in the finnaly block or something similar.
+You must call the ``close()`` method all times you finish your XBee
+application. You can use this in the finally block or something similar.
 
 If you don't do this, you may have problems with the packet listener, that is
-being executed in a separated thread.
+being executed in a separate thread.
 
 This method guarantees that the listener thread will be stopped and the
 serial port will be closed.
 
-**Finalizing a XBeeDevice**
+**Closing the connection**
 
 .. code:: python
 
@@ -354,14 +354,14 @@ serial port will be closed.
   local_xbee = XBeeDevice("COM1", 9600)
 
   try:
-      xbee.init()
+      xbee.open()
 
       [...]
 
   finally:
-      if xbee is not None and xbee.is_initialized():
-          xbee.finalize()
+      if xbee is not None and xbee.is_open():
+          xbee.close()
 
-Remote XBee devices cannot be initialized, so they cannot be finalized either.
-To finalize the connection of a remote device you need to finalize the
-connection of the local associated device.
+Remote XBee devices cannot be open, so they cannot be closed either. To close
+the connection of a remote device you need to close the connection of the local
+associated device.

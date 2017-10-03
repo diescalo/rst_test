@@ -211,8 +211,8 @@ You can locate the example in the following path:
    :ref:`communicateSendExplicitData`.
 
 
-Send explicit data asnynchronously
-``````````````````````````````````
+Send explicit data asynchronously
+`````````````````````````````````
 
 This sample application shows how to send data in application layer (explicit)
 format asynchronously to a remote ZigBee device on the same network as the
@@ -305,7 +305,7 @@ You can locate the example in the following path:
 
 .. note::
    For more information about how to receive data using a callback, see
-   :ref:`comunicateReceiveDataCallback`.
+   :ref:`communicateReceiveDataCallback`.
 
 
 Receive data polling
@@ -323,7 +323,7 @@ You can locate the example in the following path:
 
 .. note::
    For more information about how to receive data using a polling mechanism,
-   see :ref:`comunicateReceiveDataPolling`.
+   see :ref:`communicateReceiveDataPolling`.
 
 
 Receive explicit data
@@ -340,7 +340,7 @@ You can locate the example in the following path:
 
 .. note::
    For more information about how to receive explicit data using a callback,
-   see :ref:`comunicateReceiveExplicitDataCallback`.
+   see :ref:`communicateReceiveExplicitDataCallback`.
 
 
 Receive explicit data polling
@@ -357,7 +357,7 @@ You can locate the example in the following path:
 
 .. note::
    For more information about how to receive explicit data using a polling
-   mechanism, see :ref:`comunicateReceiveExplicitDataPolling`.
+   mechanism, see :ref:`communicateReceiveExplicitDataPolling`.
 
 
 Receive IP data (IP devices)
@@ -372,7 +372,7 @@ You can find the example at the following path:
 
 .. note::
    For more information about how to receive IP data using a polling mechanism,
-   see :ref:`comunicateReceiveIPData`.
+   see :ref:`communicateReceiveIPData`.
 
 
 Receive SMS (Cellular devices)
@@ -387,7 +387,7 @@ You can find the example at the following path:
 
 .. note::
    For more information about how to receive SMS messages, see
-   :ref:`comunicateReceiveSMS`.
+   :ref:`communicateReceiveSMS`.
 
 
 Receive modem status
@@ -405,7 +405,7 @@ You can locate the example in the following path:
 
 .. note::
    For more information about how to receive modem status events, see
-   :ref:`comunicateReceiveModemStatus`.
+   :ref:`communicateReceiveModemStatus`.
 
 
 Connect to echo server (IP devices)
@@ -420,7 +420,7 @@ You can find the example at the following path:
 
 .. note::
    For more information about how to send and receive IP data, see
-   :ref:`communicateSendIPData` and :ref:`comunicateReceiveIPData`.
+   :ref:`communicateSendIPData` and :ref:`communicateReceiveIPData`.
 
 
 .. _samplesIO:

@@ -39,7 +39,7 @@ properly:
 
 * **Python 3**. You can get it from https://www.python.org/getit/
 * **PySerial 3**. Install it with pip (``pip install pyserial``) or refer to
-  the `PySerial installlation guide
+  the `PySerial installation guide
   <http://pythonhosted.org/pyserial/pyserial.html#installation>`_ for further
   information about getting PySerial.
 
@@ -47,7 +47,7 @@ properly:
 Contents
 ========
 
-The XBee Python library documentation is split in different secions:
+The XBee Python library documentation is split in different sections:
 
 * :ref:`indexGSG`
 * :ref:`indexUserDoc`
@@ -89,8 +89,8 @@ provided by the library and how to use them.
 Examples
 --------
 
-The library includes a good amount of examples that demonstrates most of the
-functionality that it provicdes.
+The library includes a good amount of examples that demonstrate most of the
+functionality that it provides.
 
 * :doc:`examples`
 
@@ -111,7 +111,7 @@ Python library in the FAQ section.
 API reference
 -------------
 
-The API reference contains more detauled documentation about the API for
+The API reference contains more detailed documentation about the API for
 developers who are interested in using and extending the library functionality.
 
 * :doc:`api/modules`

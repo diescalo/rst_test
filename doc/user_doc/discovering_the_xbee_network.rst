@@ -24,7 +24,7 @@ the ``get_network()`` method.
 
   # Instantiate an XBee device object.
   xbee = XBeeDevice("COM1", 9600)
-  xbee.init()
+  xbee.open()
 
   # Get the network.
   xnet = xbee.get_network()
@@ -34,7 +34,7 @@ One of the main features of the ``XBeeNetwork`` class is the possibility of
 discovering the XBee devices that form the network. The ``XBeeNetwork`` object
 provides the following operations related to the XBee devices discovery feature:
 
-* Configure the discovery proess
+* Configure the discovery process
 * Discover the network
 * Access the discovered devices
 * Add and remove devices manually
@@ -48,17 +48,16 @@ settings of that process. The API provides two methods to configure the
 discovery timeout and discovery options. These methods set the provided values
 in the module.
 
-+-----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                                  | Description                                                                                                                                                                                                                      |
-+=========================================+==================================================================================================================================================================================================================================+
-| **set_discovery_timeout(Float)**        | Configures the discovery timeout (NT parameter) with the given value in seconds.                                                                                                                                                 |
-+-----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **set_network_discovery_opts(Integer)** | Configures the discovery options (NO parameter) with the given value. This value could be a concatenation of the existing discovery options (via 'or' ('\|') operator) . These options are the following:                        |
-|                                         |  - XBeeNetwork.DSCVRY_OPTS_APPEND_DD: Appends the device type identifier (DD) to the information retrieved when a node is discovered. This option is valid for DigiMesh, Point-to-multipoint (Digi Point) and ZigBee protocols.  |
-|                                         |  - XBeeNetwork.DSCVRY_OPTS_SELF_RESPONSE: The local XBee device is returned as a discovered device. This option is valid for all protocols.                                                                                      |
-|                                         |  - XBeeNetwork.DSCVRY_OPTS_APPEND_RSSI: Include RSSI information in response.                                                                                                                                                    |
-|                                         |  - XBeeNetwork.DSCVRY_OPTS_NONE: Does nothing.                                                                                                                                                                                   |
-+-----------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++--------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                                           | Description                                                                                                                                                                                                                                                                                  |
++==================================================+==============================================================================================================================================================================================================================================================================================+
+| **set_discovery_timeout(Float)**                 | Configures the discovery timeout (``NT`` parameter) with the given value in seconds.                                                                                                                                                                                                         |
++--------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **set_discovery_options(Set<DiscoveryOptions>)** | Configures the discovery options (``NO`` parameter) with the set of options. The set of discovery options contains the different ``DiscoveryOptions`` configuration values that are applied to the local XBee module when performing the discovery process. These options are the following: |
+|                                                  | - ``DiscoveryOptions.APPEND_DD``: Appends the device type identifier (DD) to the information retrieved when a node is discovered. This option is valid for DigiMesh, Point-to-multipoint (Digi Point) and ZigBee protocols.                                                                  |
+|                                                  | - ``DiscoveryOptions.DISCOVER_MYSELF``: The local XBee device is returned as a discovered device. This option is valid for all protocols.                                                                                                                                                    |
+|                                                  | - ``DiscoveryOptions.APPEND_RSSI``: Appends the RSSI value of the last hop to the information retrieved when a node is discovered. This option is valid for DigiMesh and Point-to-multipoint (Digi Point) protocols.                                                                         |
++--------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Configuring discovery timeout and options**
 
@@ -74,9 +73,8 @@ in the module.
   # Get the network.
   xnet = xbee.get_network()
 
-  # Configure the discovery options, in this case, self_response and append_dd. You can combine the discovery
-  # options via 'or' operator ('|').
-  xnet.set_network_discovery_opts(XBeeNetwork.DSCVRY_OPTS_SELF_RESPONSE | XBeeNetwork.DSCVRY_OPTS_APPEND_DD)
+  # Configure the discovery options.
+  xnet.set_discovery_options({DiscoveryOptions.DISCOVER_MYSELF, DiscoveryOptions.APPEND_DD})
 
   # Configure the discovery timeout, in SECONDS.
   xnet.set_discovery_timeout(25)
@@ -93,28 +91,28 @@ The ``XBeeNetwork`` object discovery process allows you to discover and store
 all the XBee devices that form the network. The XBeeNetwork object provides a
 method for executing the discovery process:
 
-+-------------------------------+---------------------------------------------------------------------------------------------------+
-| Method                        | Description                                                                                       |
-+===============================+===================================================================================================+
-| **start_discovery_process()** | Starts the discovery process, saving the remote XBee devices found inside the XBeeNetwork object. |
-+-------------------------------+---------------------------------------------------------------------------------------------------+
++-------------------------------+-------------------------------------------------------------------------------------------------------+
+| Method                        | Description                                                                                           |
++===============================+=======================================================================================================+
+| **start_discovery_process()** | Starts the discovery process, saving the remote XBee devices found inside the ``XBeeNetwork`` object. |
++-------------------------------+-------------------------------------------------------------------------------------------------------+
 
 When a discovery process has started, you can monitor and manage it using the
-following methods provided by the ``XBeeNetworkobject``:
+following methods provided by the ``XBeeNetwork`` object:
 
-+----------------------------+----------------------------------------------------------+
-| Method                     | Description                                              |
-+============================+==========================================================+
-| **is_discovery_running()** | Returns whether or not the discovery process is running. |
-+----------------------------+----------------------------------------------------------+
-| **stop_discovering()**     | Stops the discovery process that is taking place.        |
-+----------------------------+----------------------------------------------------------+
++------------------------------+----------------------------------------------------------+
+| Method                       | Description                                              |
++==============================+==========================================================+
+| **is_discovery_running()**   | Returns whether or not the discovery process is running. |
++------------------------------+----------------------------------------------------------+
+| **stop_discovery_process()** | Stops the discovery process that is taking place.        |
++------------------------------+----------------------------------------------------------+
 
 .. warning::
-  Although you call the ``stop_discovering`` method, DigiMesh and DigiPoint
-  devices are blocked until the configured discovery time has elapsed. If you
-  try to get or set any parameter during that time, a ``TimeoutException`` is
-  thrown.
+  Although you call the ``stop_discovery_process`` method, DigiMesh and
+  DigiPoint devices are blocked until the configured discovery time has elapsed.
+  If you try to get or set any parameter during that time, a
+  ``TimeoutException`` is thrown.
 
 Once the process has finished, you can retrieve the list of devices that form
 the network using the ``get_devices()`` method provided by the network object.
@@ -134,7 +132,7 @@ If the discovering process is running, this method will return ``None``.
 
   # Start the discovery process and wait for it to be over.
   xnet.start_discovery_process()
-  while(xnet.is_discovery_running()):
+  while xnet.is_discovery_running():
       time.sleep(0.5)
 
   # Get a list of the devices added to the network.
@@ -197,8 +195,8 @@ all times that a discovery process finishes.
   xbee = XBeeDevice(...)
 
   # Define the discovery process finished callback.
-  def callback(err_code):
-      if err_code == XBeeNetwork.ERR_READ_TIMEOUT:
+  def callback(status):
+      if status == NetworkDiscoveryStatus.ERROR_READ_TIMEOUT:
           [...]
 
   # Add the discovery process finished callback.
@@ -208,11 +206,10 @@ all times that a discovery process finishes.
 
 The behavior of the event is as follows:
 
-* When a discovery process has finished for any reason, this event is raised,
-  and all callbacks associated with it are executed. This method receives a
-  integer as parameter. This integer represents an error code. Error codes are
-  defined as class constants of ``XBeeNetwork``. All of them start with the
-  prefix **ERR**.
+* When a discovery process has finished for any reason (either successfully or
+  with an error), this event is raised, and all callbacks associated with it
+  are executed. This method receives a ``NetworkDiscoveryStatus`` object as
+  parameter. This status represents the result of the network discovery process.
 
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Example: Device Discovery                                                                                                                                        |
@@ -230,13 +227,13 @@ The ``XBeeNetwork`` object also provides a couple of methods to discover
 specific devices of the network. This is useful, for example, if you only need
 to work with a particular remote device.
 
-+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                         | Description                                                                                                                                                                                                      |
-+================================+==================================================================================================================================================================================================================+
-| **discover_device(String)**    | Specify the node identifier of the XBee device to be found. Returns the remote XBee device whose node identifier equals the one provided. In the case of finding more than one device, it returns the first one. |
-+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **discover_devices([String])** | Specify the node identifiers of the XBee devices to be found. Returns a list with the remote XBee devices whose node identifiers equal those provided.                                                           |
-+--------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++--------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                         | Description                                                                                                                                                                                                                                              |
++================================+==========================================================================================================================================================================================================================================================+
+| **discover_device(String)**    | Specify the node identifier of the XBee device to be found. Returns the remote XBee device whose node identifier equals the one provided or ``None`` if the device was not found. In the case of finding more than one device, it returns the first one. |
++--------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **discover_devices([String])** | Specify the node identifiers of the XBee devices to be found. Returns a list with the remote XBee devices whose node identifiers equal those provided.                                                                                                   |
++--------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 .. Note::
   These methods are blocking, so the application will block until the
@@ -257,7 +254,7 @@ to work with a particular remote device.
   xnet = xbee.get_network()
 
   # Discover the remote device whose node ID is ‘SOME NODE ID’.
-  remote = xnet.discover_device(bytearray("SOME NODE ID"))
+  remote = xnet.discover_device("SOME NODE ID")
 
   # Discover the remote devices whose node IDs are ‘ID 2’ and ‘ID 3’.
   remote_list = xnet.discover_devices(["ID 2", "ID 3"])
@@ -277,14 +274,17 @@ other lists.
 This is the list of methods provided by the ``XBeeNetwork`` object that allow
 you to retrieve already discovered devices:
 
-+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                                                        | Description                                                                                                                                                    |
-+===============================================================+================================================================================================================================================================+
-| **get_devices(String)**                                       | Returns a copy of the list of remote XBee devices. If some device is added to the network before calling this method, the list returned will not be updated.   |
-+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| **get_device(XBee64BitAddress, XBee16BitAddress, Bytearray)** | | The remote device will be searched by the parameters you give. These may be the 16-bit address, the 64-bit address, the node id, or any combination of them. |
-|                                                               | | If there are not devices in the network with the given parameters, this method returns ``None``.                                                             |
-+---------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
++----------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                                 | Description                                                                                                                                                  |
++========================================+==============================================================================================================================================================+
+| **get_devices(String)**                | Returns a copy of the list of remote XBee devices. If some device is added to the network before calling this method, the list returned will not be updated. |
++----------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **get_device_by_64(XBee64BitAddress)** | Returns the remote device already contained in the network whose 64-bit address matches the given one or ``None`` if the device is not in the network.       |
++----------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **get_device_by_16(XBee16BitAddress)** | Returns the remote device already contained in the network whose 16-bit address matches the given one or ``None`` if the device is not in the network.       |
++----------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **get_device_by_node_id(String)**      | Returns the remote device already contained in the network whose node identifier matches the given one or ``None`` if the device is not in the network.      |
++----------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Accessing discovered devices**
 
@@ -301,18 +301,17 @@ you to retrieve already discovered devices:
   [...]
 
   x64addr = XBee64BitAddress(...)
-  x16addr = XBee16BitAddress(...)
-  node_id = bytearray("SOME_XBEE")
+  node_id = "SOME_XBEE"
 
   # Discover a device based on a 64-bit address.
-  spec_device = xnet.get_device(x64addr)
+  spec_device = xnet.get_device_by_64(x64addr)
   if spec_device is None:
       print("Device with 64-bit addr: %s not found" % str(x64addr))
 
-  # Discover a device based on a 16-bit address and a Node ID.
-  spec_device = xnet.get_device(None, x16addr, node_id)
+  # Discover a device based on a Node ID.
+  spec_device = xnet.get_device_by_node_id(node_id)
   if spec_device is not None:
-      print("Device with 16-bit addr: %s and node id: %s found" % (str(x64addr), str(node_id)))
+      print("Device with node id: %s not found" % node_id)
 
   [...]
 

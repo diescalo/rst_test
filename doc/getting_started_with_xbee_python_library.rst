@@ -31,7 +31,7 @@ XBee Python application:
 Python 3
 ````````
 
-The Xbee Python library requires Python 3 to work properly. If you don't have
+The XBee Python library requires Python 3 to work properly. If you don't have
 it already installed, you can get it from https://www.python.org/getit/
 
 .. warning::
@@ -49,14 +49,14 @@ For that purpose the XBee Python library uses the **PySerial** module.
 The best way to install PySerial is with the
 `pip <https://pip.pypa.io/en/stable>`_ tool (which is what Python uses to
 install packages). Note, this comes with Python in recent versions. You can
-install PySerial running this command in your terminal aplication:
+install PySerial running this command in your terminal application:
 
 .. code::
 
   $ pip install pyserial
 
 For further information about the installation of PySerial, refer to the
-`PySerial installlation guide
+`PySerial installation guide
 <http://pythonhosted.org/pyserial/pyserial.html#installation>`_.
 
 
@@ -375,11 +375,11 @@ successfully:
          Remember to replace the COM port by the one your *sender* XBee device
          is connected to.
 
-   #. Initialize the XBee device:
+   #. Open the connection with the device:
 
       .. code::
 
-        > device.init()
+        > device.open()
 
    #. Send the *Hello XBee World!* broadcast message.
 
@@ -387,11 +387,11 @@ successfully:
 
         > device.send_data_broadcast("Hello XBee World!".encode("utf8"))
 
-   #. Finalize the connection with the device:
+   #. Close the connection with the device:
 
       .. code::
 
-        > device.finalize()
+        > device.close()
 
 #. Verify that the message is received by the *receiver* XBee in XCTU. An
    **RX (Receive) frame** should be displayed in the **Console log** with the
@@ -453,11 +453,11 @@ successfully:
          Remember to replace the COM port by the one your *sender* XBee device
          is connected to.
 
-   #. Initialize the Wi-Fi device:
+   #. Open the connection with the device:
 
       .. code::
 
-        > device.init()
+        > device.open()
 
    #. Send the *Hello XBee World!* broadcast message.
 
@@ -465,11 +465,11 @@ successfully:
 
         > device.send_ip_data_broadcast(9750, "Hello XBee World!".encode("utf8"))
 
-   #. Finalize the connection with the device:
+   #. Close the connection with the device:
 
       .. code::
 
-        > device.finalize()
+        > device.close()
 
 #. Verify that the message is received by the *receiver* XBee in XCTU. An
    **RX IPv4 frame** should be displayed in the **Console log** with the
@@ -511,7 +511,7 @@ execute it:
 
 #. Open the Python interpreter and write the application commands.
 
-   #. Import the ``CellularDevice``, ``IPv4Address`` and ``IPPrototcol``
+   #. Import the ``CellularDevice``, ``IPv4Address`` and ``IPProtocol``
       classes:
 
       .. code::
@@ -530,11 +530,11 @@ execute it:
          Remember to replace the COM port by the one your Cellular XBee device
          is connected to.
 
-   #. Initialize the Cellular device:
+   #. Open the connection with the device:
 
       .. code::
 
-        > device.init()
+        > device.open()
 
    #. Send the *Hello XBee World!* message to the echo server with IP
       *52.43.121.77* and port *11001* using the *TCP IP* protocol.
@@ -551,8 +551,8 @@ execute it:
         > ip_message = device.read_ip_data()
         > print(ip_message.data.decode("utf8")) if ip_message is not None else "ERROR"
 
-   #. Finalize the connection with the device:
+   #. Close the connection with the device:
 
       .. code::
 
-        > device.finalize()
+        > device.close()

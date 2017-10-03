@@ -37,7 +37,7 @@ The supported functions are also contained in an enumerator called ``IOMode``.
 You can choose between the following functions:
 
 * DISABLED
-* SPECIAL_FUNCTIONALITY (Shouldn’t be used to configure IOs)
+* SPECIAL_FUNCTIONALITY (Shouldn't be used to configure IOs)
 * PWM
 * ADC
 * DIGITAL_IN
@@ -52,7 +52,7 @@ You can choose between the following functions:
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Instantiate a remote XBee device object.
   remote_xbee = RemoteXBeeDevice(local_xbee, XBee64BitAddress.from_hex_string("0013A20012345678"))
@@ -95,7 +95,7 @@ can be configured with a desired function using the corresponding getter,
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Get the configuration mode of the DIO1_AD1 line.
   io_mode = local_xbee.get_io_configuration(IOLine.DIO1_AD1)
@@ -134,7 +134,7 @@ If your IO line is configured as digital output, you can set its state
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Set the DIO2_AD2 line low.
   local_xbee.set_dio_value(IOLine.DIO2_AD2, IOValue.LOW)
@@ -168,7 +168,7 @@ be read.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Get the value of the DIO2_AD2.
   value = local_xbee.get_dio_value(IOLine.DIO2_AD2)
@@ -220,7 +220,7 @@ The IO line to read the value from ``get_adc_value()``.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -279,7 +279,7 @@ a double, which allows you to be more precise in the configuration.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -311,7 +311,7 @@ with the current duty cycle percentage of the PWM.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -366,7 +366,7 @@ method returns an IOSample object.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -416,7 +416,7 @@ feature.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -452,7 +452,7 @@ is disabled.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -497,7 +497,7 @@ configured destination address.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -536,7 +536,7 @@ feature is disabled.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -578,7 +578,7 @@ function as parameter.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 
@@ -613,7 +613,7 @@ using the ``del_io_sample_received_callback()`` method.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   [...]
 

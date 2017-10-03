@@ -49,7 +49,7 @@ getters:
 +------------------------+----------------------------+
 
 Local XBee devices read and save previous parameters automatically when
-initializing the connection of the device. In remote XBee devices, you must
+opening the connection of the device. In remote XBee devices, you must
 issue the ``read_device_info()`` method to initialize the parameters.
 
 You can refresh the value of those parameters (that is, read their values and
@@ -64,7 +64,7 @@ update them inside the XBee device object) at any time by calling the
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Refresh the cached values.
   local_xbee.refresh_device_info()
@@ -85,11 +85,11 @@ All the cached parameters but the Node Identifier do not change; therefore,
 they cannot be set. For the Node Identifier, there is a method within all the
 XBee device classes that allows you to change it:
 
-+-------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Method                  | Description                                                                                                                                                                  |
-+=========================+==============================================================================================================================================================================+
-| **set_node_id(String)** | Specifies the new Node Identifier of the device. This method configures the physical XBee device with the provided Node Identifier and updates the cached value with the one |
-+-------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Method                  | Description                                                                                                                                                                   |
++=========================+===============================================================================================================================================================================+
+| **set_node_id(String)** | Specifies the new Node Identifier of the device. This method configures the physical XBee device with the provided Node Identifier and updates the cached value with the one. |
++-------------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 Non-cached parameters
@@ -140,7 +140,7 @@ configured within the XBee device classes:
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Set the destination address of the device.
   dest_address = XBee64BitAddress.from_hex_string("0013A20040XXXXXX")
@@ -212,7 +212,7 @@ within the XBee device object.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Get the value of the Sleep Time (SP) parameter.
   sp = local_xbee.get_parameter("SP")
@@ -261,7 +261,7 @@ To set a parameter that does not have its own setter method, you can use the
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Configure the Node ID using the set_parameter() method.
   local_xbee.set_parameter("NI",  bytearray("Yoda", 'utf8'))
@@ -312,7 +312,7 @@ method provided by all the XBee device classes.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Run the apply changes command.
   local_xbee.execute_command("AC")
@@ -360,7 +360,7 @@ methods that allow you to manage when to apply configuration changes.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Check if device is configured to apply changes.
   apply_changes_enabled = local_xbee.is_apply_changes_enabled()
@@ -414,7 +414,7 @@ subsequent resets: ``write_changes()``.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Set the PAN ID of the XBee device to BABE.
   local_xbee.set_pan_id(utils.hex_string_to_bytes("BABE"))
@@ -466,7 +466,7 @@ them.
 
   # Instantiate an XBee device object.
   local_xbee = XBeeDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Reset the module.
   local_xbee.reset()
@@ -513,7 +513,7 @@ one of them in easily.
 +===================================================================================================================================================================================================================+
 | The XBee Python Library includes a sample application that demonstrates how to configure the network settings of a Wi-Fi device and connect to an access point. You can locate the example in the following path: |
 |                                                                                                                                                                                                                   |
-| **/examples/configuration/ConnectToAccessPointSample**                                                                                                                                                            |
+| **examples/configuration/ConnectToAccessPointSample**                                                                                                                                                             |
 +-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -545,7 +545,7 @@ supported IP addressing modes are contained in an enumerator called
 
   # Instantiate an XBee device object.
   local_xbee = WiFiDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Configure the IP addressing mode to DHCP.
   local_xbee.set_ip_addressing_mode(IPAddressingMode.DHCP)
@@ -600,7 +600,7 @@ is the list of parameters used in the configuration of the TCP/IP protocol:
 
   # Instantiate an XBee device object.
   local_xbee = WiFiDevice("COM1", 9600)
-  local_xbee.init()
+  local_xbee.open()
 
   # Configure the IP addressing mode to DHCP.
   local_xbee.set_ip_addressing_mode(IPAddressingMode.DHCP)
