@@ -11,6 +11,8 @@ The guide is split in 3 main sections:
 * :ref:`gsgConfigure`
 * :ref:`gsgRunApp`
 
+This is a dummy line.
+
 
 .. _gsgInstall:
 
