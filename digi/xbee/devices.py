@@ -70,7 +70,7 @@ class AbstractXBeeDevice(object):
                 XBee device that will behave as connection interface to communicate with the remote XBee one.
             serial_port (:class:`.XBeeSerialPort`, optional): only necessary if the XBee device is local. The serial
                 port that will be used to communicate with this XBee.
-            sync_ops_timeout (Integer, default=:attr:`.AbstractXBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`): the
+            sync_ops_timeout (Integer, default: :attr:`AbstractXBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`): the
                 timeout (in seconds) that will be applied for all synchronous operations.
 
         .. seealso::
@@ -117,16 +117,36 @@ class AbstractXBeeDevice(object):
 
             Else (all parameters of both devices are ``None``) returns ``True``.
         """
-        if (not isinstance(self, AbstractXBeeDevice) or
-           not isinstance(object, AbstractXBeeDevice)):
+        if other is None:
             return False
-        if self.get_64bit_addr() is not None or other.get_64bit_addr() is not None:
-            return self.get_64bit_addr().address == other.get_64bit_addr().address
-        if self.get_16bit_addr() is not None or other.get_16bit_addr() is not None:
-            return self.get_16bit_addr().address == other.get_16bit_addr().address
-        if self.get_node_id() is not None or other.get_node_id() is not None:
-            return self.get_node_id() == other.get_node_id()
-        return True
+        if not isinstance(self, AbstractXBeeDevice) or not isinstance(other, AbstractXBeeDevice):
+            return False
+        if self.get_64bit_addr() is not None and other.get_64bit_addr() is not None:
+            return self.get_64bit_addr() == other.get_64bit_addr()
+        return False
+
+    def update_device_data_from(self, device):
+        """
+        Updates the current device reference with the data provided for the given device.
+
+        This is only for internal use.
+
+        Args:
+            device (:class:`.AbstractXBeeDevice`): the XBee device to get the data from.
+        """
+        if device.get_node_id() is not None:
+            self._node_id = device.get_node_id()
+
+        addr64 = device.get_64bit_addr()
+        if (addr64 is not None and
+            addr64 != XBee64BitAddress.UNKNOWN_ADDRESS and
+            addr64 != self._64bit_addr and
+                (self._64bit_addr is None or self._64bit_addr == XBee64BitAddress.UNKNOWN_ADDRESS)):
+            self._64bit_addr = addr64
+
+        addr16 = device.get_16bit_addr()
+        if addr16 is not None and addr16 != self._16bit_addr:
+            self._16bit_addr = addr16
 
     @abstractmethod
     def get_parameter(self, parameter):
@@ -479,7 +499,7 @@ class AbstractXBeeDevice(object):
             TimeoutException: if the response is not received before the read timeout expires.
 
         .. seealso::
-           | :class:`.XBee64BitAddress`:
+           | :class:`.XBee64BitAddress`
         """
         dh = self.get_parameter("DH")
         dl = self.get_parameter("DL")
@@ -544,7 +564,7 @@ class AbstractXBeeDevice(object):
             TimeoutException: if the response is not received before the read timeout expires.
 
         .. seealso::
-           | :class:`.PowerLevel`:
+           | :class:`.PowerLevel`
         """
         return PowerLevel.get(self.get_parameter("PL")[0])
 
@@ -559,7 +579,7 @@ class AbstractXBeeDevice(object):
             TimeoutException: if the response is not received before the read timeout expires.
 
         .. seealso::
-           | :class:`.PowerLevel`:
+           | :class:`.PowerLevel`
         """
         self.set_parameter("PL", bytearray([power_level.code]))
 
@@ -743,19 +763,20 @@ class AbstractXBeeDevice(object):
             InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                 method only checks the cached value of the operating mode.
             ATCommandException: if the response is not as expected.
-            ValueError: if the given IO line does not have PWM capability or 'cycle' is not between 0 and 100.
+            ValueError: if the given IO line does not have PWM capability or ``cycle`` is not between 0 and 100.
 
         .. seealso::
            | :class:`.IOLine`
            | :attr:`.IOMode.PWM`
         """
-        if not io_line.has_pwm_capabilit():
-            raise ValueError("The passed IO_LINE has no PWM capability.")
+        if not io_line.has_pwm_capability():
+            raise ValueError("%s has no PWM capability." % io_line)
         if cycle < 0 or cycle > 100:
-            raise ValueError("Cycle must be between 0 and 100.")
-        __cycle = int(round(cycle * 123.00 / 100.00))
+            raise ValueError("Cycle must be between 0% and 100%.")
 
-        self.set_parameter(io_line.get_pwm_duty_cycle_at_comm(), bytearray([__cycle]))
+        duty_cycle = int(round(cycle * 1023.00 / 100.00))
+
+        self.set_parameter(io_line.pwm_at_command, bytearray(utils.int_to_bytes(duty_cycle)))
 
     def get_pwm_duty_cycle(self, io_line):
         """
@@ -778,13 +799,11 @@ class AbstractXBeeDevice(object):
         .. seealso::
            | :class:`.IOLine`
         """
-        if not io_line.has_pwm_capabilit():
-            raise ValueError("The passed IO_LINE has no PWM capability")
-        resp = self.get_parameter(io_line.get_pwm_duty_cycle_at_comm())
-        if len(resp) < 1:
-            return 0
-        num = utils.bytes_to_int(resp)
-        return round((num * 100.0 / 1023.0) * 100) / 100.0
+        if not io_line.has_pwm_capability():
+            raise ValueError("%s has no PWM capability." % io_line)
+
+        value = utils.bytes_to_int(self.get_parameter(io_line.pwm_at_command))
+        return round(((value * 100.0 / 1023.0) * 100.0) / 100.0)
 
     def get_dio_value(self, io_line):
         """
@@ -832,8 +851,8 @@ class AbstractXBeeDevice(object):
             ATCommandException: if the response is not as expected.
 
         .. seealso::
-           | :class:`.IOLine`:
-           | :class:`.IOValue`:
+           | :class:`.IOLine`
+           | :class:`.IOValue`
         """
         self.set_parameter(io_line.at_command, bytearray([io_value.value]))
 
@@ -854,7 +873,7 @@ class AbstractXBeeDevice(object):
             ATCommandException: if the response is not as expected.
 
         .. seealso::
-           | :class:`.IOLine`:
+           | :class:`.IOLine`
         """
         flags = bytearray(2)
         if io_lines_set is not None:
@@ -884,7 +903,7 @@ class AbstractXBeeDevice(object):
             ATCommandException: if the response is not as expected.
 
         .. seealso::
-           | :class:`.APIOutputMode`:
+           | :class:`.APIOutputMode`
         """
         return APIOutputMode.get(self.get_parameter("AO")[0])
 
@@ -904,7 +923,7 @@ class AbstractXBeeDevice(object):
             OperationNotSupportedException: if the current protocol is ZigBee
 
         .. seealso::
-           | :class:`.APIOutputMode`:
+           | :class:`.APIOutputMode`
         """
         self.set_parameter("AO", bytearray([api_output_mode.code]))
 
@@ -1273,7 +1292,7 @@ class XBeeDevice(AbstractXBeeDevice):
             :class:`.XBeeSerialPort`: the serial port associated to the XBee device.
 
         .. seealso::
-           | :class:`.XBeeSerialPort`:
+           | :class:`.XBeeSerialPort`
         """
         return self._serial_port
 
@@ -1453,8 +1472,11 @@ class XBeeDevice(AbstractXBeeDevice):
             if remote_xbee_device.get_64bit_addr() is not None and remote_xbee_device.get_16bit_addr() is not None:
                 return self._send_data_64_16(remote_xbee_device.get_64bit_addr(), remote_xbee_device.get_16bit_addr(),
                                              data)
+            elif remote_xbee_device.get_64bit_addr() is not None:
+                return self._send_data_64(remote_xbee_device.get_64bit_addr(), data)
             else:
-                return self._send_data_64(remote_xbee_device.get_16bit_addr(), data)
+                return self._send_data_64_16(XBee64BitAddress.UNKNOWN_ADDRESS, remote_xbee_device.get_16bit_addr(),
+                                             data)
         elif protocol == XBeeProtocol.RAW_802_15_4:
             if isinstance(self, Raw802Device):
                 if remote_xbee_device.get_64bit_addr() is not None:
@@ -2479,7 +2501,7 @@ class Raw802Device(XBeeDevice):
         Override.
 
         .. seealso::
-           | :meth:`.AbstractXBeeDevice._get_ai_status`.
+           | :meth:`.AbstractXBeeDevice._get_ai_status`
         """
         return super()._get_ai_status()
 
@@ -2906,7 +2928,7 @@ class ZigBeeDevice(XBeeDevice):
         Override.
 
         .. seealso::
-           | :meth:`.AbstractXBeeDevice._get_ai_status`.
+           | :meth:`.AbstractXBeeDevice._get_ai_status`
         """
         return super()._get_ai_status()
 
@@ -2915,7 +2937,7 @@ class ZigBeeDevice(XBeeDevice):
         Override.
 
         .. seealso::
-           | :meth:`.AbstractXBeeDevice._force_disassociate`.
+           | :meth:`.AbstractXBeeDevice._force_disassociate`
         """
         super()._force_disassociate()
 
@@ -4807,7 +4829,7 @@ class RemoteRaw802Device(RemoteXBeeDevice):
         Override.
         
         .. seealso::
-           | :meth:`.RemoteXBeeDevice.get_protocol`.
+           | :meth:`.RemoteXBeeDevice.get_protocol`
         """
         return XBeeProtocol.RAW_802_15_4
 
@@ -4831,7 +4853,7 @@ class RemoteRaw802Device(RemoteXBeeDevice):
         Override.
 
         .. seealso::
-           | :meth:`.AbstractXBeeDevice._get_ai_status`.
+           | :meth:`.AbstractXBeeDevice._get_ai_status`
         """
         return super()._get_ai_status()
 
@@ -4869,7 +4891,7 @@ class RemoteDigiMeshDevice(RemoteXBeeDevice):
         Override.
         
         .. seealso::
-           | :meth:`.RemoteXBeeDevice.get_protocol`.
+           | :meth:`.RemoteXBeeDevice.get_protocol`
         """
         return XBeeProtocol.DIGI_MESH
 
@@ -4907,7 +4929,7 @@ class RemoteDigiPointDevice(RemoteXBeeDevice):
         Override.
         
         .. seealso::
-           | :meth:`.RemoteXBeeDevice.get_protocol`.
+           | :meth:`.RemoteXBeeDevice.get_protocol`
         """
         return XBeeProtocol.DIGI_POINT
 
@@ -4947,7 +4969,7 @@ class RemoteZigBeeDevice(RemoteXBeeDevice):
         Override.
         
         .. seealso::
-           | :meth:`.RemoteXBeeDevice.get_protocol`.
+           | :meth:`.RemoteXBeeDevice.get_protocol`
         """
         return XBeeProtocol.ZIGBEE
 
@@ -4956,7 +4978,7 @@ class RemoteZigBeeDevice(RemoteXBeeDevice):
         Override.
 
         .. seealso::
-           | :meth:`.AbstractXBeeDevice._get_ai_status`.
+           | :meth:`.AbstractXBeeDevice._get_ai_status`
         """
         return super()._get_ai_status()
 
@@ -4965,7 +4987,7 @@ class RemoteZigBeeDevice(RemoteXBeeDevice):
         Override.
 
         .. seealso::
-           | :meth:`.AbstractXBeeDevice._force_disassociate`.
+           | :meth:`.AbstractXBeeDevice._force_disassociate`
         """
         super()._force_disassociate()
 
@@ -5084,7 +5106,9 @@ class XBeeNetwork(object):
                 self.__sought_device_id = None
                 remote = self.__discovered_device
                 self.__discovered_device = None
-                return remote
+            if remote is not None:
+                self.add_remote(remote)
+            return remote
 
     def discover_devices(self, device_id_list):
         """
@@ -5104,7 +5128,7 @@ class XBeeNetwork(object):
         self.start_discovery_process()
         while self.is_discovery_running():
             time.sleep(0.1)
-        return filter(lambda x: x.get_node_id() in device_id_list, self.__last_search_dev_list)
+        return list(filter(lambda x: x.get_node_id() in device_id_list, self.__last_search_dev_list))
 
     def is_discovery_running(self):
         """
@@ -5322,7 +5346,7 @@ class XBeeNetwork(object):
 
         with self.__lock:
             for device in self.__devices_list:
-                if device.get_64bit_addr() is not None and device.get_64bit_addr().address == x64bit_addr.address:
+                if device.get_64bit_addr() is not None and device.get_64bit_addr() == x64bit_addr:
                     return device
 
         return None
@@ -5352,7 +5376,7 @@ class XBeeNetwork(object):
 
         with self.__lock:
             for device in self.__devices_list:
-                if device.get_16bit_addr() is not None and device.get_16bit_addr().address == x16bit_addr.address:
+                if device.get_16bit_addr() is not None and device.get_16bit_addr() == x16bit_addr:
                     return device
 
         return None
@@ -5416,7 +5440,7 @@ class XBeeNetwork(object):
         with self.__lock:
             for local_xbee in self.__devices_list:
                 if local_xbee == remote_xbee_device:
-                    self.__update_device(local_xbee, remote_xbee_device)
+                    local_xbee.update_device_data_from(remote_xbee_device)
                     return local_xbee
             self.__devices_list.append(remote_xbee_device)
             return remote_xbee_device
@@ -5518,24 +5542,6 @@ class XBeeNetwork(object):
             :class:`.Thread`: the network discovery thread.
         """
         return self.__discovery_thread
-
-    @staticmethod
-    def __update_device(xbee_device_1, xbee_device_2):
-        """
-        Updates the information of a remote XBee device with the values of other remote XBee device.
-        
-        The values are only updated if they are not ``None`` in the remote device used to get the information from.
-        
-        Args:
-            xbee_device_1 (:class:`.RemoteXBeeDevice`): the remote XBee device to be updated
-            xbee_device_2 (:class:`.RemoteXBeeDevice`): the remote XBee device to take information from.
-        """
-        if xbee_device_2.get_64bit_addr() is not None:
-            xbee_device_1.set_64bit_addr(xbee_device_2.get_64bit_addr())
-        if xbee_device_2.get_16bit_addr() is not None:
-            xbee_device_1.set_16bit_addr(xbee_device_2.get_16bit_addr())
-        if xbee_device_2.get_node_id() is not None:
-            xbee_device_1.set_node_id(xbee_device_2.get_node_id())
 
     @staticmethod
     def __check_nd_packet(xbee_packet):

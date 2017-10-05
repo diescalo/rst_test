@@ -30,6 +30,7 @@ class XBee16BitAddress(object):
     |     **BROADCAST_ADDRESS** (XBee16BitAddress): 16-bit broadcast address.
     |     **UNKNOWN_ADDRESS** (XBee16BitAddress): 16-bit unknown address.
     |     **PATTERN** (String): Pattern for the 16-bit address string: ``(0[xX])?[0-9a-fA-F]{1,4}``
+
     """
 
     PATTERN = "(0[xX])?[0-9a-fA-F]{1,4}"

@@ -22,7 +22,7 @@ Documentation
 -------------
 
 XBee Python library has user guide and API reference documentation at
-`digi-xbee.readthedocs.io <https://digi-xbee.readthedocs.io>`_.
+`digi-xbee.readthedocs.io <https://digi-xbee.readthedocs.io>`_
 
 
 How to contribute

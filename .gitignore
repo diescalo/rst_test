@@ -1,2 +1,7 @@
-/doc/_build
 *.pyc
+/doc/_build
+/.settings
+/backups
+.project
+.pydevproject
+.idea

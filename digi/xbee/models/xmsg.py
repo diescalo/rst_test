@@ -31,6 +31,8 @@ class XBeeMessage(object):
 
     def __get_data(self):
         """
+        Returns the data of the message.
+
         Returns:
             Bytearray: the data of the message.
         """
@@ -38,6 +40,8 @@ class XBeeMessage(object):
 
     def __get_remote_device(self):
         """
+        Returns the device which has sent the message.
+
         Returns:
             :class:`.RemoteXBeeDevice`: the device which has sent the message.
         """

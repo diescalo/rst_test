@@ -1,86 +1,23 @@
 digi\.xbee\.packets package
 ===========================
 
+.. automodule:: digi.xbee.packets
+    :members:
+    :inherited-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
-digi\.xbee\.packets\.aft module
--------------------------------
+.. toctree::
 
-.. automodule:: digi.xbee.packets.aft
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   digi.xbee.packets.aft
+   digi.xbee.packets.base
+   digi.xbee.packets.cellular
+   digi.xbee.packets.common
+   digi.xbee.packets.devicecloud
+   digi.xbee.packets.network
+   digi.xbee.packets.raw
+   digi.xbee.packets.wifi
+   digi.xbee.packets.xfactory
 
-digi\.xbee\.packets\.base module
---------------------------------
-
-.. automodule:: digi.xbee.packets.base
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.cellular module
-------------------------------------
-
-.. automodule:: digi.xbee.packets.cellular
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.common module
-----------------------------------
-
-.. automodule:: digi.xbee.packets.common
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.devicecloud module
----------------------------------------
-
-.. automodule:: digi.xbee.packets.devicecloud
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.network module
------------------------------------
-
-.. automodule:: digi.xbee.packets.network
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.raw module
--------------------------------
-
-.. automodule:: digi.xbee.packets.raw
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.wifi module
---------------------------------
-
-.. automodule:: digi.xbee.packets.wifi
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-digi\.xbee\.packets\.xfactory module
-------------------------------------
-
-.. automodule:: digi.xbee.packets.xfactory
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: digi.xbee.packets
-    :members:
-    :undoc-members:
-    :show-inheritance:

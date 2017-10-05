@@ -1,22 +1,14 @@
 digi\.xbee\.util package
 ========================
 
+.. automodule:: digi.xbee.util
+    :members:
+    :inherited-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
-digi\.xbee\.util\.utils module
-------------------------------
+.. toctree::
 
-.. automodule:: digi.xbee.util.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: digi.xbee.util
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   digi.xbee.util.utils

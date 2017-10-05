@@ -257,12 +257,12 @@ def doc_enum(enum_class, descriptions=None):
         String: the string listing all the enumeration values and their descriptions.
     """
     tab = " "*4
-    data = "\n%s| Values:\n" % tab
+    data = "\n| Values:\n"
     for x in enum_class:
-        data += """{:s}| {:s}**{:s}**{:s} {:s}\n""".format(tab, tab, x,
-                                                           ":" if descriptions is not None else " =",
-                                                           str(x.value) if descriptions is None else descriptions[x])
-    return data + "\n"
+        data += """| {:s}**{:s}**{:s} {:s}\n""".format(tab, x,
+                                                       ":" if descriptions is not None else " =",
+                                                       str(x.value) if descriptions is None else descriptions[x])
+    return data + "| \n"
 
 
 def enable_logger(name, level=logging.DEBUG):

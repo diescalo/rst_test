@@ -1,17 +1,14 @@
 digi package
 ============
 
+.. automodule:: digi
+    :members:
+    :inherited-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
 .. toctree::
 
     digi.xbee
-
-Module contents
----------------
-
-.. automodule:: digi
-    :members:
-    :undoc-members:
-    :show-inheritance:

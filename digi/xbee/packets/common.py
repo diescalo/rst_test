@@ -875,7 +875,7 @@ class RemoteATCommandResponsePacket(XBeeAPIPacket):
         Args:
             frame_id (Integer): the frame ID of the packet.
             x64bit_addr (:class:`.XBee64BitAddress`): the 64-bit source address
-            x16bit_addr (:class:`.XXBee16BitAddress): the 16-bit source address.
+            x16bit_addr (:class:`.XBee16BitAddress`): the 16-bit source address.
             command (String): the AT command of the packet. Must be a string.
             response_status (:class:`.ATCommandStatus`): the status of the AT command.
             comm_value (Bytearray, optional): the AT command response value. Optional.
@@ -1123,7 +1123,7 @@ class TransmitPacket(XBeeAPIPacket):
     If a 16-bit address is not known, this field should be set to 
     ``0xFFFE`` (unknown).
 
-    The transmit status frame (:attr:`.ApiFrameType.TRANSMIT_STATUS`) will
+    The transmit status frame ( :attr:`.ApiFrameType.TRANSMIT_STATUS`) will
     indicate the discovered 16-bit address, if successful (see :class:`.TransmitStatusPacket`).
 
     The broadcast radius can be set from ``0`` up to ``NH``. If set
@@ -2040,7 +2040,7 @@ class ExplicitAddressingPacket(XBeeAPIPacket):
     If a 16-bit address is not known, this field should be set to
     ``0xFFFE`` (unknown).
 
-    The transmit status frame (:attr:`.ApiFrameType.TRANSMIT_STATUS`) will
+    The transmit status frame ( :attr:`.ApiFrameType.TRANSMIT_STATUS`) will
     indicate the discovered 16-bit address, if successful (see :class:`.TransmitStatusPacket`)).
 
     The broadcast radius can be set from ``0`` up to ``NH``. If set

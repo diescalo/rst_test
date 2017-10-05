@@ -16,13 +16,6 @@ import sys
 import os
 import sphinx_rtd_theme
 
-# Extend the 'autodoc-skip-member' rule to auto-document the class
-# constructors ('__init__')
-def skip(app, what, name, obj, skip, options):
-    if name == "__init__":
-        return False
-    return skip
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -40,15 +33,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinxcontrib.napoleon',
-]
-
-# This value contains a list of modules to be mocked up. This is useful
-# when some external dependencies are not met at build time and break the
-# building process. You may only specify the root package of the dependencies
-# themselves and ommit the sub-modules:
-autodoc_mock_imports = [
-    'serial',
-    'serial.serialutil'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -297,6 +281,36 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
+# -- Autodoc options ------------------------------------------------------
+
+# This value selects what content will be inserted into the main body of an
+# autoclass directive. The possible values are:
+#
+# "class"
+#     Only the class’ docstring is inserted. This is the default. You can
+#     still document __init__ as a separate method using automethod or the
+#     members option to autoclass.
+# "both"
+#     Both the class’ and the __init__ method’s docstring are concatenated
+#     and inserted.
+# "init"
+#     Only the __init__ method’s docstring is inserted.
+autoclass_content = 'both'
+
+# This value selects if automatically documented members are sorted
+# alphabetically (value 'alphabetical'), by member type (value 'groupwise') or
+# by source order (value 'bysource'). The default is alphabetical.
+autodoc_member_order = 'bysource'
+
+# This value contains a list of modules to be mocked up. This is useful
+# when some external dependencies are not met at build time and break the
+# building process. You may only specify the root package of the dependencies
+# themselves and ommit the sub-modules:
+autodoc_mock_imports = [
+    'serial',
+    'serial.serialutil',
+]
+
+
 def setup(app):
    app.add_stylesheet("theme_overrides.css")
-   app.connect("autodoc-skip-member", skip)
