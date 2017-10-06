@@ -21,7 +21,7 @@ Submodules
 .. toctree::
 
    digi.xbee.devices
-   digi.xbee.xexc
-   digi.xbee.xio
-   digi.xbee.xreader
-   digi.xbee.xserial
+   digi.xbee.exception
+   digi.xbee.io
+   digi.xbee.reader
+   digi.xbee.serial

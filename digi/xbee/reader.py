@@ -11,18 +11,18 @@ import time
 
 import digi.xbee.devices
 from digi.xbee.models.atcomm import SpecialByte
-from digi.xbee.models.xaddr import XBee64BitAddress, XBee16BitAddress
-from digi.xbee.models.xmsg import XBeeMessage, ExplicitXBeeMessage, IPMessage, \
+from digi.xbee.models.address import XBee64BitAddress, XBee16BitAddress
+from digi.xbee.models.message import XBeeMessage, ExplicitXBeeMessage, IPMessage, \
     SMSMessage
-from digi.xbee.models.xopts import ReceiveOptions
-from digi.xbee.models.xprot import XBeeProtocol
-from digi.xbee.packets import xfactory
+from digi.xbee.models.options import ReceiveOptions
+from digi.xbee.models.protocol import XBeeProtocol
+from digi.xbee.packets import factory
 from digi.xbee.packets.aft import ApiFrameType
 from digi.xbee.packets.common import ReceivePacket
 from digi.xbee.packets.raw import RX64Packet, RX16Packet
 from digi.xbee.util import utils
-from digi.xbee.xexc import TimeoutException
-from digi.xbee.xio import IOSample
+from digi.xbee.exception import TimeoutException
+from digi.xbee.io import IOSample
 
 
 class XBeeEvent(list):
@@ -295,7 +295,7 @@ class PacketListener(threading.Thread):
                         continue
 
                     # Build the packet.
-                    read_packet = xfactory.build_frame(raw_packet, self.__xbee_device.operating_mode)
+                    read_packet = factory.build_frame(raw_packet, self.__xbee_device.operating_mode)
                     self._log.debug(self.__xbee_device.LOG_PATTERN.format(port=self.__xbee_device.serial_port.port,
                                                                           event="RECEIVED",
                                                                           opmode=self.__xbee_device.operating_mode,

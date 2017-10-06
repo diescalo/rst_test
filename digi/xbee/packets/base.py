@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod
 from digi.xbee.packets.aft import ApiFrameType
 from digi.xbee.models.atcomm import SpecialByte
 from digi.xbee.models.mode import OperatingMode
-from digi.xbee.xexc import InvalidPacketException, InvalidOperatingModeException
+from digi.xbee.exception import InvalidPacketException, InvalidOperatingModeException
 from digi.xbee.util import utils
 from enum import Enum, unique
 
@@ -98,7 +98,7 @@ class XBeePacket:
             Integer: length value of the XBeePacket.
             
         .. seealso::
-           | :mod:`.xfactory`
+           | :mod:`.factory`
         """
         return len(self.get_frame_spec_data())
 
@@ -121,7 +121,7 @@ class XBeePacket:
             Integer: checksum value of this XBeePacket.
         
         .. seealso::
-           | :mod:`.xfactory`
+           | :mod:`.factory`
         """
         return 0xFF - (sum(self.get_frame_spec_data()) & 0xFF)
 
@@ -186,7 +186,7 @@ class XBeePacket:
             Bytearray: the data between the length field and the checksum field as bytearray.
         
         .. seealso::
-           | :mod:`.xfactory`
+           | :mod:`.factory`
         """
         pass
 
@@ -372,7 +372,7 @@ class XBeeAPIPacket(XBeePacket):
             InvalidPacketException: if the calculated checksum is different than the checksum field value (last byte).
         
         .. seealso::
-           | :mod:`.xfactory`
+           | :mod:`.factory`
         """
         if len(raw) < min_length:
                 raise InvalidPacketException("Bytearray must have, at least, 5 of complete length (header, length, "
@@ -443,7 +443,7 @@ class GenericXBeePacket(XBeeAPIPacket):
             rf_data (bytearray): the frame specific data without frame type and frame ID.
         
         .. seealso::
-           | :mod:`.xfactory`
+           | :mod:`.factory`
            | :class:`.XBeeAPIPacket`
         """
         super().__init__(api_frame_type=ApiFrameType.GENERIC)

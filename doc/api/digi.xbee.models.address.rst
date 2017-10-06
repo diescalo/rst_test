@@ -1,7 +1,7 @@
-digi\.xbee\.models\.xstatus module
+digi\.xbee\.models\.address module
 ==================================
 
-.. automodule:: digi.xbee.models.xstatus
+.. automodule:: digi.xbee.models.address
     :members:
     :inherited-members:
     :show-inheritance:

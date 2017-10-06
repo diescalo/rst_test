@@ -6,11 +6,11 @@
 
 from digi.xbee.packets.base import XBeeAPIPacket, DictKeys
 from digi.xbee.util import utils
-from digi.xbee.xexc import InvalidOperatingModeException, InvalidPacketException
+from digi.xbee.exception import InvalidOperatingModeException, InvalidPacketException
 from digi.xbee.packets.aft import ApiFrameType
 from digi.xbee.models.mode import OperatingMode
-from digi.xbee.models.xstatus import DeviceCloudStatus, FrameError
-from digi.xbee.models.xopts import SendDataRequestOptions
+from digi.xbee.models.status import DeviceCloudStatus, FrameError
+from digi.xbee.models.options import SendDataRequestOptions
 
 
 class DeviceRequestPacket(XBeeAPIPacket):

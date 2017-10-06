@@ -213,7 +213,7 @@ class XBeeProtocol(Enum):
                 return XBeeProtocol.XTEND
             elif firmware_version.startswith("8"):
                 return XBeeProtocol.XTEND_DM
-            return XBeeProtocol.SX
+            return XBeeProtocol.DIGI_MESH
 
         elif hardware_version in [HardwareVersion.S2D_SMT_PRO.code,
                                   HardwareVersion.S2D_SMT_REG.code,
@@ -227,8 +227,13 @@ class XBeeProtocol(Enum):
                                   HardwareVersion.CELLULAR_LTE_VERIZON.code]:
             return XBeeProtocol.CELLULAR
 
-        elif hardware_version == HardwareVersion.CELLULAR_NBIOT.code:
+        elif hardware_version == HardwareVersion.CELLULAR_NBIOT_EUROPE.code:
             return XBeeProtocol.CELLULAR_NBIOT
+
+        elif hardware_version in [HardwareVersion.XBEE3,
+                                  HardwareVersion.XBEE3_SMT,
+                                  HardwareVersion.XBEE3_TH]:
+            return XBeeProtocol.ZIGBEE
 
         return XBeeProtocol.ZIGBEE
 

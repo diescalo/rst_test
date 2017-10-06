@@ -33,8 +33,8 @@ the **Port** label.
    **/dev/ prefix**.
 
 
-Can I use the XBee Java Library with modules in AT operating mode?
-------------------------------------------------------------------
+Can I use the XBee Python Library with modules in AT operating mode?
+--------------------------------------------------------------------
 
 No, the XBee Python Library only supports **API** and **API Escaped** operating
 modes.

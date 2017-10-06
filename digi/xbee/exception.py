@@ -70,7 +70,7 @@ class InvalidConfigurationException(ConnectionException):
     __DEFAULT_MESSAGE = "The configuration used to open the interface is invalid."
 
     def __init__(self, message=__DEFAULT_MESSAGE):
-        ConnectionException.__init__(self, msg=message)
+        ConnectionException.__init__(self, message)
 
 
 class InvalidOperatingModeException(ConnectionException):

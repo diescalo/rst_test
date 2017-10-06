@@ -5,12 +5,12 @@
 # Copyright (c) 2017 Digi International Inc. All Rights Reserved.
 
 from digi.xbee.packets.base import XBeeAPIPacket, DictKeys
-from digi.xbee.models.xaddr import XBee64BitAddress, XBee16BitAddress
-from digi.xbee.models.xstatus import TransmitStatus
-from digi.xbee.xexc import InvalidOperatingModeException, InvalidPacketException
+from digi.xbee.models.address import XBee64BitAddress, XBee16BitAddress
+from digi.xbee.models.status import TransmitStatus
+from digi.xbee.exception import InvalidOperatingModeException, InvalidPacketException
 from digi.xbee.packets.aft import ApiFrameType
 from digi.xbee.models.mode import OperatingMode
-from digi.xbee.xio import IOSample, IOLine
+from digi.xbee.io import IOSample, IOLine
 from digi.xbee.util import utils
 
 

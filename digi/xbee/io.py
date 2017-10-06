@@ -6,7 +6,7 @@
 
 from digi.xbee.util import utils
 from enum import Enum, unique
-from digi.xbee.xexc import OperationNotSupportedException
+from digi.xbee.exception import OperationNotSupportedException
 
 
 @unique

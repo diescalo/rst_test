@@ -12,7 +12,7 @@ The XBee Python Library uses the Python's standard logging module for
 registering logging events. The logger works at module level, that is, there
 is a logger with different name for each module that has logger.
 
-The modules that have logging integrated are ``devices`` and ``xreader``. By
+The modules that have logging integrated are ``devices`` and ``reader``. By
 default, all loggers are disabled. Because of this, you will not see any
 logging message in the console if you do not activate them explicitly.
 
@@ -31,7 +31,7 @@ To retrieve the logger, you have to use the ``get_logger()`` method of the
 logging module, providing the name of the logger that you want to get as
 parameter. In the XBee Python Library all loggers have the name of the module
 they belong to. For example, the name of the logger of the ``devices`` module
-is ``src.devices``. You can get a module name with the special attribute
+is ``digi.xbee.devices``. You can get a module name with the special attribute
 \_\_name\_\_.
 
 **Retrieving a module name and its logger**
@@ -41,10 +41,10 @@ is ``src.devices``. You can get a module name with the special attribute
   [...]
 
   # Get the logger of the devices module.
-  dev_logger = logging.getLogger(src.devices.__name__)
+  dev_logger = logging.getLogger(digi.xbee.devices.__name__)
 
   # Get the logger of the devices module providing the name.
-  dev_logger = logging.getLogger("src.devices")
+  dev_logger = logging.getLogger("digi.xbee.devices")
 
   [...]
 
@@ -61,7 +61,7 @@ Python Library handler and add your own handlers.
   [...]
 
   # Get the logger of the devices module.
-  dev_logger = logging.getLogger(src.devices.__name__)
+  dev_logger = logging.getLogger(digi.xbee.devices.__name__)
 
   # Get a handler and add it to the logger.
   handler = logging.StreamHandler()
@@ -102,7 +102,7 @@ the Python documentation.
   [...]
 
   # Get the logger of the devices module providing the name.
-  dev_logger = logging.getLogger("src.devices")
+  dev_logger = logging.getLogger("digi.xbee.devices")
 
   # Get a handler and configure a formatter for it.
   handler = logging.StreamHandler()
@@ -139,19 +139,19 @@ settings are:
 
   [...]
 
-  # Enable the logger in the src.devices module with INFO level.
-  dev_logger = enable_logger(src.devices.__name__, logging.INFO)
+  # Enable the logger in the digi.xbee.devices module with INFO level.
+  dev_logger = enable_logger(digi.xbee.devices.__name__, logging.INFO)
 
   # This is a valid method to do the same, too.
-  dev_logger = enable_logger("src.devices", logging.INFO)
+  dev_logger = enable_logger("digi.xbee.devices", logging.INFO)
 
   [...]
 
-  # Enable the logger in the src.devices module with the default level (DEBUG).
-  dev_logger = enable_logger("src.devices")
+  # Enable the logger in the digi.xbee.devices module with the default level (DEBUG).
+  dev_logger = enable_logger("digi.xbee.devices")
 
   # This is a valid method to do the same, too.
-  dev_logger = enable_logger("src.devices", logging.DEBUG)
+  dev_logger = enable_logger("digi.xbee.devices", logging.DEBUG)
 
   [...]
 

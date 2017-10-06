@@ -19,25 +19,25 @@ from digi.xbee.models.accesspoint import AccessPoint, WiFiEncryptionType
 from digi.xbee.models.atcomm import SpecialByte
 from digi.xbee.models.hw import HardwareVersion
 from digi.xbee.models.mode import OperatingMode, APIOutputMode, IPAddressingMode
-from digi.xbee.models.xaddr import XBee64BitAddress, XBee16BitAddress, XBeeIMEIAddress
-from digi.xbee.models.xmsg import XBeeMessage, ExplicitXBeeMessage, IPMessage
-from digi.xbee.models.xopts import TransmitOptions, RemoteATCmdOptions, DiscoveryOptions
-from digi.xbee.models.xprot import XBeeProtocol, IPProtocol
-from digi.xbee.models.xstatus import ATCommandStatus, TransmitStatus, PowerLevel, \
+from digi.xbee.models.address import XBee64BitAddress, XBee16BitAddress, XBeeIMEIAddress
+from digi.xbee.models.message import XBeeMessage, ExplicitXBeeMessage, IPMessage
+from digi.xbee.models.options import TransmitOptions, RemoteATCmdOptions, DiscoveryOptions
+from digi.xbee.models.protocol import XBeeProtocol, IPProtocol
+from digi.xbee.models.status import ATCommandStatus, TransmitStatus, PowerLevel, \
     ModemStatus, CellularAssociationIndicationStatus, WiFiAssociationIndicationStatus, AssociationIndicationStatus,\
     NetworkDiscoveryStatus
-from digi.xbee.packets import xfactory
+from digi.xbee.packets import factory
 from digi.xbee.packets.aft import ApiFrameType
 from digi.xbee.packets.common import ATCommPacket, TransmitPacket, RemoteATCommandPacket, ExplicitAddressingPacket
 from digi.xbee.packets.network import TXIPv4Packet
 from digi.xbee.packets.raw import TX64Packet, TX16Packet
 from digi.xbee.util import utils
-from digi.xbee.xexc import XBeeException, TimeoutException, InvalidOperatingModeException, \
+from digi.xbee.exception import XBeeException, TimeoutException, InvalidOperatingModeException, \
     ATCommandException, OperationNotSupportedException
-from digi.xbee.xio import IOSample, IOMode
-import digi.xbee.xreader
-from digi.xbee.xserial import FlowControl
-from digi.xbee.xserial import XBeeSerialPort
+from digi.xbee.io import IOSample, IOMode
+from digi.xbee.reader import PacketListener, PacketReceived, DeviceDiscovered, DiscoveryProcessFinished
+from digi.xbee.serial import FlowControl
+from digi.xbee.serial import XBeeSerialPort
 
 
 class AbstractXBeeDevice(object):
@@ -1016,7 +1016,7 @@ class AbstractXBeeDevice(object):
         def dec_function(*args, **kwargs):
             response = func(*args, **kwargs)
             if response.transmit_status != TransmitStatus.SUCCESS:
-                raise XBeeException("Transmit status: " + str(response.transmit_status))
+                raise XBeeException("Transmit status: %s" % response.transmit_status.description)
             return response
         return dec_function
 
@@ -1037,9 +1037,9 @@ class AbstractXBeeDevice(object):
         operating_mode = OperatingMode.API_MODE if self.is_remote() else self._operating_mode
         if not (0 <= frame_id <= 255):
             raise ValueError("Frame ID must be between 0 and 255.")
-        packet_read = xfactory.build_frame(self.__read_next_packet(), operating_mode)
+        packet_read = factory.build_frame(self.__read_next_packet(), operating_mode)
         while not packet_read.needs_id() or packet_read.frame_id != frame_id:
-            packet_read = xfactory.build_frame(self.__read_next_packet(), operating_mode)
+            packet_read = factory.build_frame(self.__read_next_packet(), operating_mode)
         return packet_read
 
     @staticmethod
@@ -1182,10 +1182,10 @@ class XBeeDevice(AbstractXBeeDevice):
 
         self._network = XBeeNetwork(self)
 
-        self._packet_listener = digi.xbee.xreader.PacketListener(self._serial_port, self)
-        self.__packet_queue = self._packet_listener.get_queue()
-        self.__data_queue = self._packet_listener.get_data_queue()
-        self.__explicit_queue = self._packet_listener.get_explicit_queue()
+        self._packet_listener = None
+        self.__packet_queue = None
+        self.__data_queue = None
+        self.__explicit_queue = None
 
         self._wait_for_id_event = Event()  # event for common packets (synchronous ops.).
         self._sync_packet_id = None
@@ -1242,23 +1242,33 @@ class XBeeDevice(AbstractXBeeDevice):
             XBeeException: if the XBee device is already open.
         """
 
-        if not self._is_open:
-            self._serial_port.port = self.__port
-            self._serial_port.open()
-            self._log.info("%s port opened" % self.__port)
+        if self._is_open:
+            raise XBeeException("XBee device already open.")
 
-            self._packet_listener.start()
-            self._operating_mode = self._determine_operating_mode()
-            if self._operating_mode == OperatingMode.UNKNOWN:
-                self.close()
-                raise InvalidOperatingModeException("Could not determine operating mode")
-            if self._operating_mode == OperatingMode.AT_MODE:
-                self.close()
-                raise InvalidOperatingModeException.from_operating_mode(self._operating_mode)
-            self.read_device_info()
-            self._is_open = True
-        else:
-            raise XBeeException("XBee device already opened.")
+        self._serial_port.port = self.__port
+        self._serial_port.open()
+        self._log.info("%s port opened" % self.__port)
+
+        # Initialize the packet listener.
+        self._packet_listener = PacketListener(self._serial_port, self)
+        self.__packet_queue = self._packet_listener.get_queue()
+        self.__data_queue = self._packet_listener.get_data_queue()
+        self.__explicit_queue = self._packet_listener.get_explicit_queue()
+        self._packet_listener.start()
+
+        # Determine the operating mode of the XBee device.
+        self._operating_mode = self._determine_operating_mode()
+        if self._operating_mode == OperatingMode.UNKNOWN:
+            self.close()
+            raise InvalidOperatingModeException("Could not determine operating mode")
+        if self._operating_mode == OperatingMode.AT_MODE:
+            self.close()
+            raise InvalidOperatingModeException.from_operating_mode(self._operating_mode)
+
+        # Read the device info (obtain its parameters and protocol).
+        self.read_device_info()
+
+        self._is_open = True
 
     def close(self):
         """
@@ -1269,17 +1279,14 @@ class XBeeDevice(AbstractXBeeDevice):
         """
         if self._network is not None:
             self._network.stop_discovery_process()
-            self._network = None
 
         if self._packet_listener is not None:
             self._packet_listener.stop()
-            self._packet_listener = None
             # Wait 100 ms before closing the port.
             time.sleep(0.1)
 
         if self._serial_port is not None and self._serial_port.isOpen():
             self._serial_port.close()
-            self._serial_port = None
             self._log.info("%s port closed" % self.__port)
 
         self._is_open = False
@@ -1436,6 +1443,52 @@ class XBeeDevice(AbstractXBeeDevice):
 
     @AbstractXBeeDevice._before_send_method
     @AbstractXBeeDevice._after_send_method
+    def _send_data_16(self, x16addr, data):
+        """
+        Blocking method. This method sends data to a remote XBee device corresponding to the given
+        16-bit address.
+
+        This method will wait for the packet response.
+
+        The default timeout for this method is :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`.
+
+        Args:
+            x16addr (:class:`.XBee16BitAddress`): The 16-bit address of the XBee that will receive the data.
+            data (Bytearray): the raw data to send.
+
+        Returns:
+            :class:`.XBeePacket` the response.
+
+        Raises:
+            ValueError: if ``x16addr`` is ``None``
+            ValueError: if ``data`` is ``None``.
+            TimeoutException: if this method can't read a response packet in
+                                :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
+            InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
+                method only checks the cached value of the operating mode.
+            XBeeException: if the XBee device's serial port is closed.
+            XBeeException: if the status of the response received is not OK.
+
+        .. seealso::
+           | :class:`.XBee16BitAddress`
+           | :class:`.XBeePacket`
+        """
+        if x16addr is None:
+            raise ValueError("16-bit address cannot be None")
+        if data is None:
+            raise ValueError("Data cannot be None")
+
+        if self.is_remote():
+            raise OperationNotSupportedException("Cannot send data to a remote device from a remote device")
+
+        packet = TX16Packet(self.get_next_frame_id(),
+                            x16addr,
+                            TransmitOptions.NONE.value,
+                            data)
+        return self.send_packet_sync_and_get_response(packet)
+
+    @AbstractXBeeDevice._before_send_method
+    @AbstractXBeeDevice._after_send_method
     def send_data(self, remote_xbee_device, data):
         """
         Blocking method. This method sends data to a remote XBee device synchronously.
@@ -1478,13 +1531,10 @@ class XBeeDevice(AbstractXBeeDevice):
                 return self._send_data_64_16(XBee64BitAddress.UNKNOWN_ADDRESS, remote_xbee_device.get_16bit_addr(),
                                              data)
         elif protocol == XBeeProtocol.RAW_802_15_4:
-            if isinstance(self, Raw802Device):
-                if remote_xbee_device.get_64bit_addr() is not None:
-                    return self._send_data_64(remote_xbee_device.get_64bit_addr(), data)
-                else:
-                    return self.send_data_16(remote_xbee_device.get_16bit_addr(), data)
-            else:
+            if remote_xbee_device.get_64bit_addr() is not None:
                 return self._send_data_64(remote_xbee_device.get_64bit_addr(), data)
+            else:
+                return self._send_data_16(remote_xbee_device.get_16bit_addr(), data)
         else:
             return self._send_data_64(remote_xbee_device.get_64bit_addr(), data)
 
@@ -1585,6 +1635,46 @@ class XBeeDevice(AbstractXBeeDevice):
         self.send_packet(packet)
 
     @AbstractXBeeDevice._before_send_method
+    def _send_data_async_16(self, x16addr, data):
+        """
+        Non-blocking method. This method sends data to a remote XBee device corresponding to the given
+        16-bit address.
+
+        This method won't wait for the response.
+
+        Args:
+            x16addr (:class:`.XBee16BitAddress`): The 16-bit address of the XBee that will receive the data.
+            data (Bytearray): the raw data to send.
+
+        Returns:
+            :class:`.XBeePacket` the response.
+
+        Raises:
+            ValueError: if ``x16addr`` is ``None``
+            ValueError: if ``data`` is ``None``.
+            InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
+                method only checks the cached value of the operating mode.
+            XBeeException: if the XBee device's serial port is closed.
+
+        .. seealso::
+           | :class:`.XBee16BitAddress`
+           | :class:`.XBeePacket`
+        """
+        if x16addr is None:
+            raise ValueError("16-bit address cannot be None")
+        if data is None:
+            raise ValueError("Data cannot be None")
+
+        if self.is_remote():
+            raise OperationNotSupportedException("Cannot send data to a remote device from a remote device")
+
+        packet = TX16Packet(self.get_next_frame_id(),
+                            x16addr,
+                            TransmitOptions.NONE.value,
+                            data)
+        self.send_packet(packet)
+
+    @AbstractXBeeDevice._before_send_method
     def send_data_async(self, remote_xbee_device, data):
         """
         Non-blocking method. This method sends data to a remote XBee device.
@@ -1614,13 +1704,10 @@ class XBeeDevice(AbstractXBeeDevice):
             else:
                 self._send_data_async_64(remote_xbee_device.get_16bit_addr(), data)
         elif protocol == XBeeProtocol.RAW_802_15_4:
-            if isinstance(self, Raw802Device):
-                if remote_xbee_device.get_64bit_addr() is not None:
-                    self._send_data_async_64(remote_xbee_device.get_64bit_addr(), data)
-                else:
-                    self.send_data_async_16(remote_xbee_device.get_16bit_addr(), data)
-            else:
+            if remote_xbee_device.get_64bit_addr() is not None:
                 self._send_data_async_64(remote_xbee_device.get_64bit_addr(), data)
+            else:
+                self._send_data_async_16(remote_xbee_device.get_16bit_addr(), data)
         else:
             self._send_data_async_64(remote_xbee_device.get_64bit_addr(), data)
 
@@ -1894,7 +1981,7 @@ class XBeeDevice(AbstractXBeeDevice):
         Returns:
             :class:`.PacketReceived`
         """
-        api_callbacks = digi.xbee.xreader.PacketReceived()
+        api_callbacks = PacketReceived()
 
         def sync_send_callback(received_packet):
             """
@@ -2417,6 +2504,10 @@ class XBeeDevice(AbstractXBeeDevice):
             x64addr = remote_xbee_device.get_64bit_addr()
             x16addr = remote_xbee_device.get_16bit_addr()
 
+        # If the device does not have 16-bit address, set it to Unknown.
+        if x16addr is None:
+            x16addr = XBee16BitAddress.UNKNOWN_ADDRESS
+
         return ExplicitAddressingPacket(self._get_next_frame_id(), x64addr,
                                         x16addr, src_endpoint, dest_endpoint,
                                         cluster_id, profile_id, 0, 0, data)
@@ -2514,52 +2605,6 @@ class Raw802Device(XBeeDevice):
         """
         return super()._send_data_64(x64addr, data)
 
-    @AbstractXBeeDevice._before_send_method
-    @AbstractXBeeDevice._after_send_method
-    def send_data_16(self, x16addr, data):
-        """
-        Blocking method. This method sends data to a remote XBee device corresponding to the given
-        16-bit address.
-
-        This method will wait for the packet response.
-
-        The default timeout for this method is :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS`.
-
-        Args:
-            x16addr (:class:`.XBee16BitAddress`): The 16-bit address of the XBee that will receive the data.
-            data (Bytearray): the raw data to send.
-
-        Returns:
-            :class:`.XBeePacket` the response.
-
-        Raises:
-            ValueError: if ``x16addr`` is ``None``
-            ValueError: if ``data`` is ``None``.
-            TimeoutException: if this method can't read a response packet in
-                                :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
-            InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
-                method only checks the cached value of the operating mode.
-            XBeeException: if the XBee device's serial port is closed.
-            XBeeException: if the status of the response received is not OK.
-
-        .. seealso::
-           | :class:`.XBee16BitAddress`
-           | :class:`.XBeePacket`
-        """
-        if x16addr is None:
-            raise ValueError("16-bit address cannot be None")
-        if data is None:
-            raise ValueError("Data cannot be None")
-
-        if self.is_remote():
-            raise OperationNotSupportedException("Cannot send data to a remote device from a remote device")
-
-        packet = TX16Packet(self.get_next_frame_id(),
-                            x16addr,
-                            TransmitOptions.NONE.value,
-                            data)
-        return self.send_packet_sync_and_get_response(packet)
-
     def send_data_async_64(self, x64addr, data):
         """
         Override.
@@ -2569,45 +2614,23 @@ class Raw802Device(XBeeDevice):
         """
         super()._send_data_async_64(x64addr, data)
 
-    @AbstractXBeeDevice._before_send_method
-    def send_data_async_16(self, x16addr, data):
+    def send_data_16(self, x16addr, data):
         """
-        Non-blocking method. This method sends data to a remote XBee device corresponding to the given
-        16-bit address.
-
-        This method won't wait for the response.
-
-        Args:
-            x16addr (:class:`.XBee16BitAddress`): The 16-bit address of the XBee that will receive the data.
-            data (Bytearray): the raw data to send.
-
-        Returns:
-            :class:`.XBeePacket` the response.
-
-        Raises:
-            ValueError: if ``x16addr`` is ``None``
-            ValueError: if ``data`` is ``None``.
-            InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
-                method only checks the cached value of the operating mode.
-            XBeeException: if the XBee device's serial port is closed.
+        Override.
 
         .. seealso::
-           | :class:`.XBee16BitAddress`
-           | :class:`.XBeePacket`
+           | :meth:`.XBeeDevice._send_data_16`
         """
-        if x16addr is None:
-            raise ValueError("16-bit address cannot be None")
-        if data is None:
-            raise ValueError("Data cannot be None")
+        return super()._send_data_16(x16addr, data)
 
-        if self.is_remote():
-            raise OperationNotSupportedException("Cannot send data to a remote device from a remote device")
+    def send_data_async_16(self, x16addr, data):
+        """
+        Override.
 
-        packet = TX16Packet(self.get_next_frame_id(),
-                            x16addr,
-                            TransmitOptions.NONE.value,
-                            data)
-        self.send_packet(packet)
+        .. seealso::
+           | :meth:`.XBeeDevice._send_data_async_16`
+        """
+        super()._send_data_async_16(x16addr, data)
 
 
 class DigiMeshDevice(XBeeDevice):
@@ -5040,8 +5063,8 @@ class XBeeNetwork(object):
         self.__last_search_dev_list = []
         self.__lock = threading.Lock()
         self.__discovering = False
-        self.__device_discovered = digi.xbee.xreader.DeviceDiscovered()
-        self.__device_discovery_finished = digi.xbee.xreader.DiscoveryProcessFinished()
+        self.__device_discovered = DeviceDiscovered()
+        self.__device_discovery_finished = DiscoveryProcessFinished()
         self.__discovery_thread = None
         self.__sought_device_id = None
         self.__discovered_device = None
@@ -5716,7 +5739,7 @@ class XBeeNetwork(object):
         elif p == XBeeProtocol.RAW_802_15_4:
             return RemoteRaw802Device(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
         else:
-            return None
+            return RemoteXBeeDevice(self.__xbee_device, x64bit_addr, x16bit_addr, node_id)
 
     def __get_data_for_remote(self, data):
         """

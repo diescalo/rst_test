@@ -363,7 +363,7 @@ successfully:
 
       .. code::
 
-        > from src.devices import XBeeDevice
+        > from digi.xbee.devices import XBeeDevice
 
    #. Instantiate a generic XBee device:
 
@@ -441,7 +441,7 @@ successfully:
 
       .. code::
 
-        > from src.devices import WiFiDevice
+        > from digi.xbee.devices import WiFiDevice
 
    #. Instantiate a Wi-Fi XBee device:
 
@@ -516,9 +516,9 @@ execute it:
 
       .. code::
 
-        > from src.devices import CellularDevice
+        > from digi.xbee.devices import CellularDevice
         > from ipaddress import IPv4Address
-        > from src.models.xprot import IPProtocol
+        > from digi.xbee.models.protocol import IPProtocol
 
    #. Instantiate a Cellular XBee device:
 

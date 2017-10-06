@@ -6,7 +6,7 @@
 
 from serial import Serial, EIGHTBITS, STOPBITS_ONE, PARITY_NONE
 import enum
-import digi.xbee.xexc
+import digi.xbee.exception
 
 
 class FlowControl(enum.Enum):
@@ -80,7 +80,7 @@ class XBeeSerialPort(Serial):
         """
         byte = bytearray(self.read(1))
         if len(byte) == 0:
-            raise digi.xbee.xexc.TimeoutException()
+            raise digi.xbee.exception.TimeoutException()
         else:
             return byte[0]
 
@@ -99,7 +99,7 @@ class XBeeSerialPort(Serial):
         """
         read_bytes = bytearray(self.read(num_bytes))
         if len(read_bytes) != num_bytes:
-            raise digi.xbee.xexc.TimeoutException()
+            raise digi.xbee.exception.TimeoutException()
         return read_bytes
 
     def read_existing(self):

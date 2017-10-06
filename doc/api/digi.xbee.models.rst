@@ -15,8 +15,8 @@ Submodules
    digi.xbee.models.atcomm
    digi.xbee.models.hw
    digi.xbee.models.mode
-   digi.xbee.models.xaddr
-   digi.xbee.models.xmsg
-   digi.xbee.models.xopts
-   digi.xbee.models.xprot
-   digi.xbee.models.xstatus
+   digi.xbee.models.address
+   digi.xbee.models.message
+   digi.xbee.models.options
+   digi.xbee.models.protocol
+   digi.xbee.models.status

@@ -39,7 +39,6 @@ The application uses the specific setters and getters provided by the XBee
 device object to configure and read the different parameters.
 
 You can locate the example in the following path:
-
 **examples/configuration/ManageCommonParametersSample**
 
 .. note::
@@ -66,7 +65,6 @@ The application then reads the parameters from the device to verify that the
 read values are the same as the values that were set.
 
 You can locate the example in the following path:
-
 **examples/configuration/SetAndGetParametersSample**
 
 .. note::
@@ -81,7 +79,6 @@ This sample application shows how to perform a software reset on the local XBee
 module.
 
 You can locate the example in the following path:
-
 **examples/configuration/ResetModuleSample**
 
 .. note::
@@ -96,7 +93,6 @@ This sample application shows how to configure a Wi-Fi module to connect to a
 specific access point and read its addressing settings.
 
 You can locate the example at the following path:
-
 **examples/configuration/ConnectToAccessPoint**
 
 .. note::
@@ -121,7 +117,6 @@ The remote XBee devices are printed out as soon as they are found during the
 discovery.
 
 You can locate the example in the following path:
-
 **examples/network/DiscoverDevicesSample**
 
 .. note::
@@ -147,7 +142,6 @@ The application sends data to a remote XBee device on the network with a
 specific node identifier (name).
 
 You can locate the example in the following path:
-
 **examples/communication/SendDataSample**
 
 .. note::
@@ -168,7 +162,6 @@ The application sends data asynchronously to a remote XBee device on the
 network with a specific node identifier (name).
 
 You can locate the example in the following path:
-
 **examples/communication/SendDataAsyncSample**
 
 .. note::
@@ -185,7 +178,6 @@ Library. The application blocks during the transmission request, but you are
 notified if there is any error during the process.
 
 You can locate the example in the following path:
-
 **examples/communication/SendBroadcastDataSample**
 
 .. note::
@@ -203,7 +195,6 @@ a reliable transmission method. The application blocks during the transmission
 request, but you are notified if there is any error during the process.
 
 You can locate the example in the following path:
-
 **examples/communication/explicit/SendExplicitDataSample**
 
 .. note::
@@ -221,7 +212,6 @@ the execution is not blocked during the transmit request, but you cannot
 determine if the data was sent successfully.
 
 You can locate the example in the following path:
-
 **examples/communication/explicit/SendExplicitDataAsyncSample**
 
 .. note::
@@ -238,7 +228,6 @@ using the XBee Python Library. The application blocks during the transmission
 request, but you are notified if there is any error during the process.
 
 You can locate the example in the following path:
-
 **examples/communication/explicit/SendBroadcastExplicitDataSample**
 
 .. note::
@@ -253,7 +242,6 @@ This sample application shows how to send IP data to another device specified
 by its IP address and port number.
 
 You can find the example at the following path:
-
 **examples/communication/ip/SendIPDataSample**
 
 .. note::
@@ -267,7 +255,6 @@ Send SMS (Cellular devices)
 This sample application shows how to send an SMS to a phone or Cellular device.
 
 You can find the example at the following path:
-
 **examples/communication/cellular/SendSMSSample**
 
 .. note::
@@ -282,7 +269,6 @@ This sample application shows how to send UDP data to another device specified
 by its IP address and port number.
 
 You can find the example at the following path:
-
 **examples/communication/ip/SendUDPDataSample**
 
 .. note::
@@ -300,7 +286,6 @@ The application prints the received data to the standard output in ASCII and
 hexadecimal formats after the sender address.
 
 You can locate the example in the following path:
-
 **examples/communication/ReceiveDataSample**
 
 .. note::
@@ -318,7 +303,6 @@ The application prints the data that was received to the standard output in
 ASCII and hexadecimal formats after the sender address.
 
 You can locate the example in the following path:
-
 **examples/communication/ReceiveDataPollingSample**
 
 .. note::
@@ -335,7 +319,6 @@ received. Before receiving data in explicit format, the API output mode of the
 ZigBee device is configured in explicit mode.
 
 You can locate the example in the following path:
-
 **examples/communication/explicit/ReceiveExplicitDataSample**
 
 .. note::
@@ -352,7 +335,6 @@ explicit format, the API output mode of the ZigBee device is configured in
 explicit mode.
 
 You can locate the example in the following path:
-
 **examples/communication/explicit/ReceiveExplicitDataPollingSample**
 
 .. note::
@@ -367,7 +349,6 @@ This sample application shows how an IP device receives IP data using a
 callback executed every time it receives new IP data.
 
 You can find the example at the following path:
-
 **examples/communication/ip/ReceiveIPDataSample**
 
 .. note::
@@ -382,7 +363,6 @@ This sample application shows how to receive SMS messages configuring a
 callback executed when new SMS is received.
 
 You can find the example at the following path:
-
 **examples/communication/cellular/ReceiveSMSSample**
 
 .. note::
@@ -400,7 +380,6 @@ The application prints the modem status events to the standard output when
 received.
 
 You can locate the example in the following path:
-
 **examples/communication/ReceiveModemStatusSample**
 
 .. note::
@@ -415,7 +394,6 @@ This sample application shows how IP devices can connect to an echo server,
 send data to it and reads the echoed data.
 
 You can find the example at the following path:
-
 **examples/communication/ip/ConnectToEchoServerSample**
 
 .. note::
@@ -442,7 +420,6 @@ input.
 While you press the push button, the LED should be lit.
 
 You can locate the example in the following path:
-
 **examples/io/LocalDIOSample**
 
 .. note::
@@ -460,7 +437,6 @@ The application configures an IO line of the XBee device as ADC. It
 periodically reads its value and prints it in the output console.
 
 You can locate the example in the following path:
-
 **examples/io/LocalADCSample**
 
 .. note::
@@ -481,7 +457,6 @@ periodically and updates the output to follow the input.
 While you press the push button, the LED should be lit.
 
 You can locate the example in the following path:
-
 **examples/io/RemoteDIOSample**
 
 .. note::
@@ -499,7 +474,6 @@ The application configures an IO line of the remote XBee device as ADC. It
 periodically reads its value and prints it in the output console.
 
 You can locate the example in the following path:
-
 **examples/io/RemoteADCSample**
 
 .. note::
@@ -524,7 +498,6 @@ The application registers a listener in the local device to receive and handle
 all IO samples sent by the remote XBee module.
 
 You can locate the example in the following path:
-
 **examples/io/IOSamplingSample**
 
 .. note::

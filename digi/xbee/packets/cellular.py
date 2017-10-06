@@ -5,10 +5,10 @@
 # Copyright (c) 2017 Digi International Inc. All Rights Reserved.
 
 from digi.xbee.packets.base import XBeeAPIPacket, DictKeys
-from digi.xbee.xexc import InvalidOperatingModeException, InvalidPacketException
+from digi.xbee.exception import InvalidOperatingModeException, InvalidPacketException
 from digi.xbee.packets.aft import ApiFrameType
 from digi.xbee.models.mode import OperatingMode
-from digi.xbee.models.xopts import TransmitOptions
+from digi.xbee.models.options import TransmitOptions
 from digi.xbee.util import utils
 import re
 

@@ -206,7 +206,7 @@ An API frame has the following structure:
 
 .. image:: ../images/concepts_api_frame.jpg
    :align: center
-   :width: 250px
+   :width: 600px
    :alt: API frames
 
 +---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -224,7 +224,7 @@ Checksum fields that must be escaped.
 
 .. image:: ../images/concepts_api_frame_explained.jpg
    :align: center
-   :width: 250px
+   :width: 600px
    :alt: API frames escaped
 
 
@@ -244,11 +244,11 @@ and some applications and documents refer to them as **AT settings** or
 The configuration process of the AT settings varies depending on the operating
 mode of the XBee RF module.
 
-* AT operating mode. In this mode, you must put the module in a special mode
+* **AT operating mode**. In this mode, you must put the module in a special mode
   called command mode, so it can receive AT commands. For more information about
   configuring XBee RF modules working in AT operating mode, see
   :ref:`atOperatingMode`.
-* API operating mode. To configure or execute AT commands when the XBee RF
+* **API operating mode**. To configure or execute AT commands when the XBee RF
   module operates in API mode, you must generate an AT command API frame
   containing the AT setting identifier and the value of that setting, and send
   it to the XBee RF module. For more information about API frames, see

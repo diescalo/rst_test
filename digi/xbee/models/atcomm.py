@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2017 Digi International Inc. All Rights Reserved.
 
-from digi.xbee.models.xstatus import ATCommandStatus
+from digi.xbee.models.status import ATCommandStatus
 from enum import Enum, unique
 from digi.xbee.util import utils
 

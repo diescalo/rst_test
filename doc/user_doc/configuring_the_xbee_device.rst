@@ -532,9 +532,8 @@ supported IP addressing modes are contained in an enumerator called
 | Method                                       | Description                                                                                                                   |
 +==============================================+===============================================================================================================================+
 | **set_ip_addressing_mode(IPAddressingMode)** | Sets the IP addressing mode of the Wi-Fi module. Depending on the provided mode, network settings are configured differently: |
-|                                              |                                                                                                                               |
-|                                              | * **DHCP**: Network settings are assigned by a server.                                                                        |
-|                                              | * **STATIC**: Network settings must be provided manually one by one.                                                          |
+|                                              |   * **DHCP**: Network settings are assigned by a server.                                                                      |
+|                                              |   * **STATIC**: Network settings must be provided manually one by one.                                                        |
 +----------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------+
 
 **Configuring IP addressing mode**

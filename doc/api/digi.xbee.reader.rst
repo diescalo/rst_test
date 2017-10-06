@@ -1,7 +1,7 @@
-digi\.xbee\.xreader module
+digi\.xbee\.reader module
 ==========================
 
-.. automodule:: digi.xbee.xreader
+.. automodule:: digi.xbee.reader
     :members:
     :inherited-members:
     :show-inheritance:

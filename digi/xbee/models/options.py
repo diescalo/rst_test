@@ -6,7 +6,7 @@
 
 from enum import Enum, unique
 
-from digi.xbee.models.xprot import XBeeProtocol
+from digi.xbee.models.protocol import XBeeProtocol
 from digi.xbee.util import utils
 
 
