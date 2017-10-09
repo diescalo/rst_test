@@ -29,7 +29,7 @@ data from remote devices, and so on. Depending on the class, you may have
 additional methods to execute protocol-specific features or similar methods.
 
 To work with the API and perform actions involving the physical device, you
-must instantiate a generic ``XBeeDevice`` object or one that
+must instantiate a generic ``XBeeDevice`` object or one that is
 protocol-specific. This documentation refers to the ``XBeeDevice`` object
 generically when describing the different features, but they can be applicable
 to any XBee device class.
@@ -109,7 +109,7 @@ Managing remote devices is similar to managing local devices, but with
 limitations. You can configure them, handle their IO lines, and so on, in the
 same way you manage local devices. Local XBee devices have several methods for
 sending data to remote devices, but the remote devices cannot use these
-methods because they are already remote. Therefore a remote device cannot send
+methods because they are already remote. Therefore, a remote device cannot send
 data to another remote device.
 
 In the local XBee device instantiation you can choose between instantiating a
@@ -279,7 +279,7 @@ need to know beforehand if you are not using the generic ``XBeeDevice`` object.
 However, the API performs this operation to ensure that the class you
 instantiated is the correct one. So, if you instantiated a ZigBee device and
 the ``open()`` process realizes that the physical device is actually a DigiMesh
-device, you receive an ``XBeeDeviceException`` indicating the device.
+device, you receive an ``XBeeDeviceException`` indicating the device mismatch.
 
 You can retrieve the protocol of the XBee device from the object executing the
 corresponding getter.
@@ -362,6 +362,6 @@ serial port will be closed.
       if xbee is not None and xbee.is_open():
           xbee.close()
 
-Remote XBee devices cannot be open, so they cannot be closed either. To close
+Remote XBee devices cannot be opened, so they cannot be closed either. To close
 the connection of a remote device you need to close the connection of the local
 associated device.

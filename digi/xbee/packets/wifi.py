@@ -529,9 +529,9 @@ class RemoteATCommandResponseWifiPacket(XBeeAPIPacket):
     Response message out the UART. Some commands may send back multiple frames
     for example, Node Discover (``ND``) command.
 
-    This packet is received in response of a :code:`.RemoteATCommandPacket`.
+    This packet is received in response of a :class:`.RemoteATCommandPacket`.
 
-    Response also includes an :code:`.ATCommandStatus` object with the status
+    Response also includes an :class:`.ATCommandStatus` object with the status
     of the AT command.
 
     .. seealso::

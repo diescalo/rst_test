@@ -84,8 +84,8 @@ Following is the complete list of protocols supported by the XBee radio modules:
 Radio module operating modes
 ----------------------------
 
-The operating mode of an XBee radio module establishes the way a user or any
-microcontroller attached to the XBee communicates with the module through the
+The operating mode of an XBee radio module establishes the way a user, or any
+microcontroller attached to the XBee, communicates with the module through the
 Universal Asynchronous Receiver/Transmitter (UART) or serial interface.
 
 Depending on the firmware and its configuration, the radio modules can work in

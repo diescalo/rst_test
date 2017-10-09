@@ -5,7 +5,7 @@ Several XBee modules working together and communicating with each other form a
 network. XBee networks have different topologies and behaviors depending on the
 protocol of the XBee devices that form it.
 
-The XBee Python Library includes a class, called XBeeNetwork, that represents
+The XBee Python Library includes a class, called ``XBeeNetwork``, that represents
 the set of nodes forming the actual XBee network. This class allows you to
 perform some operations related to the nodes. The XBee Network object can be
 retrieved from a local XBee device after it has been opened using
@@ -34,11 +34,12 @@ One of the main features of the ``XBeeNetwork`` class is the possibility of
 discovering the XBee devices that form the network. The ``XBeeNetwork`` object
 provides the following operations related to the XBee devices discovery feature:
 
-* Configure the discovery process
-* Discover the network
-* Access the discovered devices
-* Add and remove devices manually
+* :ref:`configDiscoveryProcess`
+* :ref:`discoverNetwork`
+* :ref:`accessDiscoveredDevices`
+* :ref:`addAndRemoveDevices`
 
+.. _configDiscoveryProcess:
 
 Configure the discovery process
 -------------------------------
@@ -54,9 +55,9 @@ in the module.
 | **set_discovery_timeout(Float)**                 | Configures the discovery timeout (``NT`` parameter) with the given value in seconds.                                                                                                                                                                                                         |
 +--------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | **set_discovery_options(Set<DiscoveryOptions>)** | Configures the discovery options (``NO`` parameter) with the set of options. The set of discovery options contains the different ``DiscoveryOptions`` configuration values that are applied to the local XBee module when performing the discovery process. These options are the following: |
-|                                                  |   * ``DiscoveryOptions.APPEND_DD``: Appends the device type identifier (DD) to the information retrieved when a node is discovered. This option is valid for DigiMesh, Point-to-multipoint (Digi Point) and ZigBee protocols.                                                                |
-|                                                  |   * ``DiscoveryOptions.DISCOVER_MYSELF``: The local XBee device is returned as a discovered device. This option is valid for all protocols.                                                                                                                                                  |
-|                                                  |   * ``DiscoveryOptions.APPEND_RSSI``: Appends the RSSI value of the last hop to the information retrieved when a node is discovered. This option is valid for DigiMesh and Point-to-multipoint (Digi Point) protocols.                                                                       |
+|                                                  |   * **DiscoveryOptions.APPEND_DD**: Appends the device type identifier (DD) to the information retrieved when a node is discovered. This option is valid for DigiMesh, Point-to-multipoint (Digi Point) and ZigBee protocols.                                                                |
+|                                                  |   * **DiscoveryOptions.DISCOVER_MYSELF**: The local XBee device is returned as a discovered device. This option is valid for all protocols.                                                                                                                                                  |
+|                                                  |   * **DiscoveryOptions.APPEND_RSSI**: Appends the RSSI value of the last hop to the information retrieved when a node is discovered. This option is valid for DigiMesh and Point-to-multipoint (Digi Point) protocols.                                                                       |
 +--------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Configuring discovery timeout and options**
@@ -214,7 +215,7 @@ The behavior of the event is as follows:
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Example: Device Discovery                                                                                                                                        |
 +==================================================================================================================================================================+
-| The XBee Python Library includes a sample application that displays how to perform a device discovery using a listener. It can be located in the following path: |
+| The XBee Python Library includes a sample application that displays how to perform a device discovery using a callback. It can be located in the following path: |
 |                                                                                                                                                                  |
 | **examples/network/DiscoverDevicesSample/DiscoverDevicesSample.py**                                                                                              |
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -261,6 +262,7 @@ to work with a particular remote device.
 
   [...]
 
+.. _accessDiscoveredDevices:
 
 Access the discovered devices
 -----------------------------
@@ -315,6 +317,7 @@ you to retrieve already discovered devices:
 
   [...]
 
+.. _addAndRemoveDevices:
 
 Add and remove devices manually
 -------------------------------

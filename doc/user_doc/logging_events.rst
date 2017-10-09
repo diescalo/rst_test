@@ -32,11 +32,13 @@ logging module, providing the name of the logger that you want to get as
 parameter. In the XBee Python Library all loggers have the name of the module
 they belong to. For example, the name of the logger of the ``devices`` module
 is ``digi.xbee.devices``. You can get a module name with the special attribute
-\_\_name\_\_.
+``\_\_name\_\_``.
 
 **Retrieving a module name and its logger**
 
 .. code:: python
+
+  import logging
 
   [...]
 
@@ -57,6 +59,8 @@ Python Library handler and add your own handlers.
 **Retrieving a Handler and adding it to a logger**
 
 .. code:: python
+
+  import logging
 
   [...]
 
@@ -82,13 +86,16 @@ the Python documentation.
 
 .. code:: python
 
+  import logging
+
   [...]
 
   # Get a handler.
   handler = (...)
 
   # Instantiate a formatter so the log entries are represented as defined here.
-  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
+                                '%(message)s')
 
   # Configure the formatter in the handler.
   handler.setFormatter(formatter)
@@ -99,6 +106,8 @@ the Python documentation.
 
 .. code:: python
 
+  import logging
+
   [...]
 
   # Get the logger of the devices module providing the name.
@@ -106,7 +115,8 @@ the Python documentation.
 
   # Get a handler and configure a formatter for it.
   handler = logging.StreamHandler()
-  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
+                                '%(message)s')
   handler.setFormatter(formatter)
 
   # Add the handler to the logger.
@@ -122,8 +132,8 @@ The XBee Python Library also provides a method in the ``utils`` module,
 ``enable_logger()``, to enable the logger with the default settings. These
 settings are:
 
- * Handler: ``StreamHandler``
- * Format: *timestamp - logger name - level - message*
+* Handler: ``StreamHandler``
+* Format: *timestamp - logger name - level - message*
 
 +----------------------------------------------+--------------------------------------------------------------------+
 | Method                                       | Description                                                        |
@@ -137,6 +147,8 @@ settings are:
 
 .. code:: python
 
+  import logging
+
   [...]
 
   # Enable the logger in the digi.xbee.devices module with INFO level.
@@ -147,7 +159,8 @@ settings are:
 
   [...]
 
-  # Enable the logger in the digi.xbee.devices module with the default level (DEBUG).
+  # Enable the logger in the digi.xbee.devices module with the default level
+  # (DEBUG).
   dev_logger = enable_logger("digi.xbee.devices")
 
   # This is a valid method to do the same, too.
@@ -157,5 +170,5 @@ settings are:
 
 .. note::
   For further information about the Python logging module, read the
-  `Python logging module official documentation <https://docs.python.org/2/library/logging.html>`_
-  or the `Python logging cookbook <https://docs.python.org/2/howto/logging-cookbook.html>`_.
+  `Python logging module official documentation <https://docs.python.org/3/library/logging.html>`_
+  or the `Python logging cookbook <https://docs.python.org/3/howto/logging-cookbook.html>`_.

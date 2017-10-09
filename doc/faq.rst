@@ -38,3 +38,20 @@ Can I use the XBee Python Library with modules in AT operating mode?
 
 No, the XBee Python Library only supports **API** and **API Escaped** operating
 modes.
+
+
+I get the Python error ``ImportError: No module named 'serial'``
+----------------------------------------------------------------
+
+This error means that Python cannot find the ``serial`` module, which is used by
+the library for the serial communication with the XBee devices.
+
+You can install PySerial running this command in your terminal application:
+
+.. code::
+
+  $ pip install pyserial
+
+For further information about the installation of PySerial, refer to the
+`PySerial installation guide
+<http://pythonhosted.org/pyserial/pyserial.html#installation>`_.

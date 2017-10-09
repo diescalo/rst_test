@@ -46,18 +46,7 @@ PySerial 3
 Serial communication with the radio modules is something mandatory for library.
 For that purpose the XBee Python library uses the **PySerial** module.
 
-The best way to install PySerial is with the
-`pip <https://pip.pypa.io/en/stable>`_ tool (which is what Python uses to
-install packages). Note, this comes with Python in recent versions. You can
-install PySerial running this command in your terminal application:
-
-.. code::
-
-  $ pip install pyserial
-
-For further information about the installation of PySerial, refer to the
-`PySerial installation guide
-<http://pythonhosted.org/pyserial/pyserial.html#installation>`_.
+This module is automatically downloaded when installing the XBee Python Library.
 
 
 .. _gsgInstallXBeePythonLibrarySoftware:
@@ -65,13 +54,15 @@ For further information about the installation of PySerial, refer to the
 XBee Python library software
 ````````````````````````````
 
-The XBee Python library is also installed with
-`pip <https://pip.pypa.io/en/stable>`_. To install the library, simply run this
-command in your terminal application:
+The best way to install the XBee Python library is with the
+`pip <https://pip.pypa.io/en/stable>`_ tool (which is what Python uses to
+install packages). Note, this comes with Python in recent versions.
+
+To install the library, simply run this command in your terminal application:
 
 .. code::
 
-  $ pip install xbee-python-library
+  $ pip install digi-xbee
 
 It will download and install the library automatically in your Python
 interpreter.
@@ -81,12 +72,12 @@ Get the source code
 *******************
 
 The XBee Python library is actively developed on GitHub, where the code is
-`always available <https://github.com/digidotcom/XBeePythonLibrary>`_. You can
+`always available <https://github.com/digidotcom/python-xbee>`_. You can
 clone the repository with:
 
 .. code::
 
-  $ git clone git://github.com/requests/xbee-python-library.git
+  $ git clone git@github.com:digidotcom/python-xbee.git
 
 
 .. _gsgInstallXCTU:
@@ -373,7 +364,8 @@ successfully:
 
       .. note::
          Remember to replace the COM port by the one your *sender* XBee device
-         is connected to.
+         is connected to. In UNIX-based systems, the port usually starts with
+         ``/dev/tty``.
 
    #. Open the connection with the device:
 
@@ -451,7 +443,8 @@ successfully:
 
       .. note::
          Remember to replace the COM port by the one your *sender* XBee device
-         is connected to.
+         is connected to. In UNIX-based systems, the port usually starts with
+         ``/dev/tty``.
 
    #. Open the connection with the device:
 
@@ -511,14 +504,14 @@ execute it:
 
 #. Open the Python interpreter and write the application commands.
 
-   #. Import the ``CellularDevice``, ``IPv4Address`` and ``IPProtocol``
+   #. Import the ``CellularDevice``, ``IPProtocol`` and ``IPv4Address``
       classes:
 
       .. code::
 
         > from digi.xbee.devices import CellularDevice
-        > from ipaddress import IPv4Address
         > from digi.xbee.models.protocol import IPProtocol
+        > from ipaddress import IPv4Address
 
    #. Instantiate a Cellular XBee device:
 
@@ -528,7 +521,8 @@ execute it:
 
       .. note::
          Remember to replace the COM port by the one your Cellular XBee device
-         is connected to.
+         is connected to. In UNIX-based systems, the port usually starts with
+         ``/dev/tty``.
 
    #. Open the connection with the device:
 
@@ -549,7 +543,7 @@ execute it:
       .. code::
 
         > ip_message = device.read_ip_data()
-        > print(ip_message.data.decode("utf8")) if ip_message is not None else "ERROR"
+        > print(ip_message.data.decode("utf8") if ip_message is not None else "ERROR")
 
    #. Close the connection with the device:
 

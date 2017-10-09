@@ -525,7 +525,7 @@ The ``set_dio_change_detection()`` method may fail for the following reasons:
       ``XBeeException``.
 
 You can also get the lines that are monitored using the
-``get_dio_change_detection()`` method. A `None` value indicates that this
+``get_dio_change_detection()`` method. A ``None`` value indicates that this
 feature is disabled.
 
 **Getting the DIO change detection**

@@ -1463,7 +1463,7 @@ class XBeeDevice(AbstractXBeeDevice):
             ValueError: if ``x16addr`` is ``None``
             ValueError: if ``data`` is ``None``.
             TimeoutException: if this method can't read a response packet in
-                                :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
+                :attr:`.XBeeDevice._DEFAULT_TIMEOUT_SYNC_OPERATIONS` seconds.
             InvalidOperatingModeException: if the XBee device's operating mode is not API or ESCAPED API. This
                 method only checks the cached value of the operating mode.
             XBeeException: if the XBee device's serial port is closed.
@@ -2337,8 +2337,8 @@ class XBeeDevice(AbstractXBeeDevice):
             4. Sends the ``packet_to_send``.
             5. Waits the configured timeout for synchronous operations.
             6. Returns all attributes to a consistent state (except _sync_packet)
-                6.1. _sync_packet to ``None``.
-                6.2. notify the listener that we are no longer waiting for any packet.
+                | 6.1. _sync_packet to ``None``.
+                | 6.2. notify the listener that we are no longer waiting for any packet.
             7. Returns the received packet if it has arrived, ``None`` otherwise.
 
         This method must be only used when the packet listener is online.
